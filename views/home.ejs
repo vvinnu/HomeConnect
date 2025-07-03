@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head') %>
+  <title>HomeConnect - Find Trusted Home Service Experts</title>
+</head>
+<body>
+  <%- include('partials/navbar') %>
+
+  <!-- Hero Banner -->
+  <header class="text-white text-center py-5" style="background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('/images/hero.jpg') center/cover no-repeat;">
+    <div class="container">
+      <h1 class="display-4 fw-bold">Welcome to HomeConnect</h1>
+      <p class="lead">Your one-stop platform to find reliable plumbers, electricians, carpenters, and more.</p>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container my-5">
+
+    <!-- Popular Services -->
+    <section class="text-center my-5">
+      <h2 class="section-title">Popular Services</h2>
+      <div class="row mt-4">
+        <div class="col-md-3">
+          <div class="service-card">
+            <img src="/images/plumbing.jpg" alt="Plumbing" class="img-fluid mb-2 service-img">
+            <h5>Plumbing</h5>
+            <p>Fix leaks, install pipes, and more from certified plumbers.</p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="service-card">
+            <img src="/images/electrician.jpg" alt="Electrical" class="img-fluid mb-2 service-img">
+            <h5>Electrical</h5>
+            <p>Professional electricians for wiring, lighting, and repairs.</p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="service-card">
+            <img src="/images/carpentry.jpg" alt="Carpentry" class="img-fluid mb-2 service-img">
+            <h5>Carpentry</h5>
+            <p>From custom shelves to home furniture repair – we’ve got you.</p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="service-card">
+            <img src="/images/cleaning.jpg" alt="Cleaning" class="img-fluid mb-2 service-img">
+            <h5>Cleaning</h5>
+            <p>Home deep cleaning services that leave everything sparkling.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="row text-center my-5">
+      <div class="col-md-4">
+        <h3>🔧 Skilled Professionals</h3>
+        <p>Browse verified profiles of service providers and choose the one that suits your needs.</p>
+      </div>
+      <div class="col-md-4">
+        <h3>📍 Nearby Experts</h3>
+        <p>Find professionals in your area with real-time availability and customer ratings.</p>
+      </div>
+      <div class="col-md-4">
+        <h3>📅 Easy Booking</h3>
+        <p>Schedule services at your convenience with just a few clicks — no hassle, no waiting.</p>
+      </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="text-center mt-5">
+      <% if (!isLoggedIn) { %>
+        <a href="/register" class="btn btn-warning ms-3 fw-bold">Join Now</a>
+        <p class="mt-2">Are you a service provider? <a href="/register">Sign up to offer your services</a></p>
+      <% } else { %>
+        <a href="/dashboard" class="btn btn-outline-primary btn-lg px-4">Go to Dashboard</a>
+      <% } %>
+    </section>
+  </main>
+
+  <%- include('partials/footer') %>
+</body>
+</html>

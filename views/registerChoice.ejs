@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head') %>
+  <title>Register - Choose Account Type | HomeConnect</title>
+</head>
+<body>
+  <%- include('partials/navbar') %>
+
+  <header class="text-white text-center py-5" style="background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('/images/register-bg.jpg') center/cover no-repeat;">
+    <div class="container">
+      <h1 class="display-5 fw-bold">Create Your Account</h1>
+      <p class="lead">Choose how you'd like to register and get started with HomeConnect.</p>
+    </div>
+  </header>
+
+  <main class="container my-5">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+
+        <div class="card shadow mb-4 border-0">
+          <div class="card-body text-center">
+            <h4 class="fw-bold">🙋 I'm a Customer</h4>
+            <p class="text-muted">Looking for home services like plumbing, electrical, cleaning, and more.</p>
+            <a href="/register/customer" class="btn btn-warning w-100 fw-bold">Register as Customer</a>
+          </div>
+        </div>
+
+        <div class="card shadow border-0">
+          <div class="card-body text-center">
+            <h4 class="fw-bold">🛠️ I'm a Service Provider</h4>
+            <p class="text-muted">Offering professional services to customers in your area.</p>
+            <a href="/register/provider" class="btn btn-warning w-100 fw-bold">Register as Provider</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <%- include('partials/footer') %>
+</body>
+</html>

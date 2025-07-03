@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head') %>
+  <title>Register as Customer | HomeConnect</title>
+</head>
+<body class="bg-light">
+  <%- include('partials/navbar') %>
+
+  <section class="py-5" style="background: linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)), url('/images/register-bg.jpg') center/cover no-repeat;">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+          <div class="card shadow-sm p-4">
+            <h3 class="text-center mb-4">🧍 Register as a Customer</h3>
+
+            <% if (formErrors && formErrors.length > 0) { %>
+              <div class="alert alert-danger">
+                <ul class="mb-0">
+                  <% formErrors.forEach(function(error) { %>
+                    <li><%= error.msg %></li>
+                  <% }) %>
+                </ul>
+              </div>
+            <% } %>
+
+            <form method="POST" action="/register/customer">
+              <input type="hidden" name="Role" value="customer" />
+
+              <div class="mb-3">
+                <label for="FullName" class="form-label">Full Name *</label>
+                <input type="text" name="FullName" id="FullName" class="form-control" required>
+              </div>
+
+              <div class="mb-3">
+                <label for="Username" class="form-label">Username *</label>
+                <input type="text" name="Username" id="Username" class="form-control" required>
+              </div>
+
+              <div class="mb-3">
+                <label for="Password" class="form-label">Password *</label>
+                <input type="password" name="Password" id="Password" class="form-control" required>
+              </div>
+
+              <div class="mb-3">
+                <label for="Email" class="form-label">Email Address</label>
+                <input type="email" name="Email" id="Email" class="form-control">
+              </div>
+
+              <div class="mb-3">
+                <label for="Phone" class="form-label">Phone Number</label>
+                <input type="tel" name="Phone" id="Phone" class="form-control">
+              </div>
+
+              <div class="mb-3">
+                <label for="Address" class="form-label">Residential Address</label>
+                <textarea name="Address" id="Address" rows="2" class="form-control"></textarea>
+              </div>
+
+<div class="d-grid">
+  <button type="submit" class="btn btn-warning text-dark fw-bold">Create Account</button>
+</div>
+
+              <p class="mt-3 text-center">
+                Already have an account? <a href="/login">Login here</a>
+              </p>
+            </form>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <%- include('partials/footer') %>
+</body>
+</html>

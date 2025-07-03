@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('partials/head') %>
+  <title>Register as Provider | HomeConnect</title>
+</head>
+<body class="bg-light">
+  <%- include('partials/navbar') %>
+
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-md-8">
+        <div class="card shadow p-4">
+          <h3 class="text-center mb-4">🛠️ Register as a Service Provider</h3>
+
+          <% if (formErrors && formErrors.length > 0) { %>
+            <div class="alert alert-danger">
+              <ul class="mb-0">
+                <% formErrors.forEach(function(error) { %>
+                  <li><%= error.msg %></li>
+                <% }) %>
+              </ul>
+            </div>
+          <% } %>
+
+          <form method="POST" action="/register-provider" enctype="multipart/form-data">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="FullName" class="form-label">Full Name *</label>
+                <input type="text" name="FullName" class="form-control" id="FullName" required>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="Username" class="form-label">Username *</label>
+                <input type="text" name="Username" class="form-control" id="Username" required>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="Password" class="form-label">Password *</label>
+                <input type="password" name="Password" class="form-control" id="Password" required>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="Phone" class="form-label">Phone Number *</label>
+                <input type="text" name="Phone" class="form-control" id="Phone" required>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="Address" class="form-label">Business/Residential Address</label>
+              <textarea name="Address" class="form-control" id="Address" rows="2"></textarea>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="ServiceType" class="form-label">Service Type *</label>
+                <select name="ServiceType" class="form-select" id="ServiceType" required>
+                  <option value="">Choose a service</option>
+                  <option value="Plumber">Plumber</option>
+                  <option value="Electrician">Electrician</option>
+                  <option value="Carpenter">Carpenter</option>
+                  <option value="Cleaner">Cleaner</option>
+                  <option value="Painter">Painter</option>
+                </select>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="Experience" class="form-label">Years of Experience *</label>
+                <input type="number" name="Experience" class="form-control" id="Experience" min="0" max="50" required>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="CertFile" class="form-label">Upload Certification (PDF/Image)</label>
+              <input type="file" name="CertFile" class="form-control" id="CertFile" accept=".pdf,.jpg,.jpeg,.png">
+            </div>
+
+            <input type="hidden" name="Role" value="provider">
+
+            <div class="d-grid">
+              <button type="submit" class="btn btn-warning fw-bold text-dark">Register as Provider</button>
+            </div>
+
+            <p class="mt-3 text-center">
+              Already have an account? <a href="/login">Login here</a>
+            </p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%- include('partials/footer') %>
+</body>
+</html>
