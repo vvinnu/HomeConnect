@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head') %>
+  <title>My Profile | HomeConnect</title>
+</head>
+<body>
+  <%- include('../partials/navbar', { isLoggedIn, role }) %>
+
+  <div class="container py-5">
+    <h3 class="text-primary text-center mb-4">👤 My Profile</h3>
+
+    <form action="/provider/profile/update" method="POST" class="bg-light p-4 shadow rounded">
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label>Full Name</label>
+          <input type="text" name="FullName" class="form-control" value="<%= provider.FullName %>" required>
+        </div>
+        <div class="col-md-6">
+          <label>Email</label>
+          <input type="email" name="Email" class="form-control" value="<%= provider.Email %>" required>
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label>Phone</label>
+          <input type="text" name="Phone" class="form-control" value="<%= provider.Phone %>">
+        </div>
+        <div class="col-md-6">
+          <label>Address</label>
+          <input type="text" name="Address" class="form-control" value="<%= provider.Address %>">
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label>Service Type</label>
+          <input type="text" name="ServiceType" class="form-control" value="<%= provider.ServiceType %>">
+        </div>
+        <div class="col-md-3">
+          <label>Experience (Years)</label>
+          <input type="number" name="Experience" class="form-control" value="<%= provider.Experience %>">
+        </div>
+        <div class="col-md-3">
+          <label>Availability</label>
+          <input type="text" name="Availability" class="form-control" value="<%= provider.Availability %>">
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label>Description</label>
+        <textarea name="Description" class="form-control" rows="3"><%= provider.Description %></textarea>
+      </div>
+
+      <div class="text-center">
+        <button class="btn btn-warning px-5">Update Profile</button>
+      </div>
+    </form>
+  </div>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

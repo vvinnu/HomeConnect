@@ -215,6 +215,94 @@ app.get('/providers/dashboard', async (req, res) => {
   }
 });
 
+//// Provider Routes
+
+// Provider Profile Page
+app.get('/provider/profile', async (req, res) => {
+  if (!req.session.isLoggedIn || req.session.role !== 'provider') {
+    return res.redirect('/login');
+  }
+
+  const userId = req.session.userId;
+
+  try {
+    const pool = await poolPromise;
+
+    const result = await pool.request()
+      .input('UserID', sql.Int, userId)
+      .query(`
+        SELECT u.FullName, u.Email, u.Phone, u.Address, p.ProviderID, 
+               p.ServiceType, p.Experience, p.Description, p.Availability
+        FROM Users u
+        JOIN Providers p ON u.UserID = p.UserID
+        WHERE u.UserID = @UserID
+      `);
+
+    const provider = result.recordset[0];
+
+    res.render('providers/profile', {
+      isLoggedIn: true,
+      username: req.session.username,
+      role: req.session.role,
+      provider
+    });
+
+  } catch (err) {
+    console.error('❌ Error loading provider profile:', err);
+    res.status(500).send('Server error while loading profile.');
+  }
+});
+
+
+app.post('/provider/profile/update', async (req, res) => {
+  if (!req.session.isLoggedIn || req.session.role !== 'provider') {
+    return res.redirect('/login');
+  }
+
+  const userId = req.session.userId;
+  const {
+    FullName, Email, Phone, Address,
+    ServiceType, Experience, Description, Availability
+  } = req.body;
+
+  try {
+    const pool = await poolPromise;
+
+    // Update Users table
+    await pool.request()
+      .input('UserID', sql.Int, userId)
+      .input('FullName', sql.NVarChar, FullName)
+      .input('Email', sql.NVarChar, Email)
+      .input('Phone', sql.NVarChar, Phone)
+      .input('Address', sql.NVarChar, Address)
+      .query(`
+        UPDATE Users
+        SET FullName = @FullName, Email = @Email, Phone = @Phone, Address = @Address
+        WHERE UserID = @UserID
+      `);
+
+    // Update Providers table
+    await pool.request()
+      .input('UserID', sql.Int, userId)
+      .input('ServiceType', sql.NVarChar, ServiceType)
+      .input('Experience', sql.Int, Experience)
+      .input('Description', sql.NVarChar, Description)
+      .input('Availability', sql.NVarChar, Availability)
+      .query(`
+        UPDATE Providers
+        SET ServiceType = @ServiceType, Experience = @Experience,
+            Description = @Description, Availability = @Availability
+        WHERE UserID = @UserID
+      `);
+
+    res.redirect('/provider/profile');
+
+  } catch (err) {
+    console.error('❌ Error updating provider profile:', err);
+    res.status(500).send('Failed to update profile.');
+  }
+});
+
 
 
 // Customer Registration Page

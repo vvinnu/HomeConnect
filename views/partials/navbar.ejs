@@ -29,9 +29,21 @@
 
         <% } else if (role === 'provider') { %>
           <!-- Provider Links -->
-          <li class="nav-item"><a class="nav-link" href="#">My Jobs</a></li>
-          <li class="nav-item"><a class="nav-link" href="#">Dashboard</a></li>
-          <li class="nav-item"><a class="btn btn-warning ms-3 fw-bold" href="/logout">Logout</a></li>
+            <li class="nav-item">
+              <a class="nav-link" href="/provider/dashboard">Dashboard</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/provider/profile">My Profile</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/provider/availability">Availability</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/provider/bookings">My Bookings</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/provider/reviews">Reviews</a>
+            </li>
 
         <% } else if (role === 'admin') { %>
           <!-- Admin Links -->
