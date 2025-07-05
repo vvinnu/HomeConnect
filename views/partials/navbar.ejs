@@ -7,32 +7,38 @@
 
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto">
+
         <li class="nav-item">
           <a class="nav-link" href="/home">Home</a>
         </li>
-        <li class="nav-item">
-          <a class="nav-link" href="#">About Us</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="#">Services</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="#">Team</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="#">Contact</a>
-        </li>
-        <% if (isLoggedIn) { %>
-          <li class="nav-item">
-            <a class="nav-link btn btn-sm btn-outline-warning ms-3" href="/dashboard">Dashboard</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link text-danger ms-2" href="/logout">Logout</a>
-          </li>
-        <% } else { %>
-          <li class="nav-item">
-            <a class="btn btn-warning ms-3 fw-bold" href="/login">LOGIN</a>
-          </li>
+
+        <% if (!isLoggedIn) { %>
+          <!-- Guest Links -->
+          <li class="nav-item"><a class="nav-link" href="#">About Us</a></li>
+          <li class="nav-item"><a class="nav-link" href="#">Services</a></li>
+          <li class="nav-item"><a class="nav-link" href="#">Team</a></li>
+          <li class="nav-item"><a class="nav-link" href="#">Contact</a></li>
+          <li class="nav-item"><a class="btn btn-warning ms-3 fw-bold" href="/login">LOGIN</a></li>
+
+        <% } else if (role === 'customer') { %>
+          <!-- Customer Links -->
+          <li class="nav-item"><a class="nav-link" href="/bookings/create">Book Service</a></li>
+          <li class="nav-item"><a class="nav-link" href="/bookings/history">Booking History</a></li>
+          <li class="nav-item"><a class="nav-link" href="/dashboard">Dashboard</a></li>
+          <li class="nav-item"><a class="btn btn-warning ms-3 fw-bold" href="/logout">Logout</a></li>
+
+        <% } else if (role === 'provider') { %>
+          <!-- Provider Links -->
+          <li class="nav-item"><a class="nav-link" href="#">My Jobs</a></li>
+          <li class="nav-item"><a class="nav-link" href="#">Dashboard</a></li>
+          <li class="nav-item"><a class="btn btn-warning ms-3 fw-bold" href="/logout">Logout</a></li>
+
+        <% } else if (role === 'admin') { %>
+          <!-- Admin Links -->
+          <li class="nav-item"><a class="nav-link" href="#">Admin Panel</a></li>
+          <li class="nav-item"><a class="nav-link" href="#">Manage Users</a></li>
+          <li class="nav-item"><a class="nav-link" href="#">Dashboard</a></li>
+          <li class="nav-item"><a class="btn btn-warning ms-3 fw-bold" href="/logout">Logout</a></li>
         <% } %>
       </ul>
     </div>
