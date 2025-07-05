@@ -99,6 +99,39 @@ INSERT INTO Reviews (BookingID, Rating, Comment) VALUES
 (2, 3, 'Satisfactory, could be better.'),
 (4, 2, 'Did not show up on time.');
 
+-- More samples for easy testing
+
+-- Reviews for Provider 1 (Plumbing - Vinay) → Bookings 1 & 6
+INSERT INTO Reviews (BookingID, Rating, Comment) VALUES
+(1, 5, 'Vinay was prompt and fixed the leak quickly.'),
+(6, 4, 'Great plumbing work, just a bit late.'),
+(1, 5, 'Very professional and explained everything clearly.');
+
+-- Reviews for Provider 2 (Electrician - Priya) → Booking 2
+INSERT INTO Reviews (BookingID, Rating, Comment) VALUES
+(2, 4, 'Solved my wiring issue efficiently.'),
+(2, 3, 'Took a bit longer, but the issue was resolved.'),
+(2, 5, 'Excellent troubleshooting skills!');
+
+-- Reviews for Provider 3 (AC Repair - Vinay) → Booking 3
+INSERT INTO Reviews (BookingID, Rating, Comment) VALUES
+(3, 5, 'Cool air restored fast. Highly recommended!'),
+(3, 4, 'Good work, but needed slight follow-up.'),
+(3, 5, 'He also gave great AC maintenance tips.');
+
+-- Reviews for Provider 4 (Painting - Priya) → Booking 4
+INSERT INTO Reviews (BookingID, Rating, Comment) VALUES
+(4, 4, 'Lovely wall finish, colors matched perfectly.'),
+(4, 2, 'Was late and didn’t complete in one visit.'),
+(4, 3, 'Decent job, but some spots were left out.');
+
+-- Reviews for Provider 5 (Carpentry - Vinay) → Booking 5
+INSERT INTO Reviews (BookingID, Rating, Comment) VALUES
+(5, 5, 'Built my shelves exactly as I wanted.'),
+(5, 4, 'Very skilled and polite.'),
+(5, 5, 'Perfect fit and finish — great work!');
+
+
 
 
 -- Insert SAMPLE TIME SLOTS for providers (2025-07-21)
@@ -119,4 +152,6 @@ INSERT INTO ProviderTimeSlots (ProviderID, SlotStart, SlotEnd, IsAvailable) VALU
 
 -- Vinay (Carpentry)
 (5, '2025-07-21T13:00:00', '2025-07-21T14:00:00', 1);
+
+
 

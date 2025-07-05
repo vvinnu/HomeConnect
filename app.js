@@ -474,6 +474,7 @@ app.get('/api/providers/timeslots', async (req, res) => {
 });
 
 
+
     // API Route to fetch available providers by serviceType and serviceDate
 app.get('/api/providers/available', async (req, res) => {
   const { serviceType, serviceDate } = req.query;
@@ -535,6 +536,53 @@ app.get('/api/timeslots', async (req, res) => {
     res.json(result.recordset);
   } catch (err) {
     console.error('❌ Error fetching timeslots:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// API to fetch the provider's details along with reviews
+app.get('/api/providers/:id', async (req, res) => {
+  const providerID = req.params.id;
+
+  try {
+    const pool = await poolPromise;
+
+    // ✅ Fetch provider and user info
+    const providerResult = await pool.request()
+      .input('ProviderID', sql.Int, providerID)
+      .query(`
+        SELECT p.ProviderID, p.ServiceType, p.Experience, p.Description, p.Availability, p.Rating,
+               u.FullName
+        FROM Providers p
+        JOIN Users u ON p.UserID = u.UserID
+        WHERE p.ProviderID = @ProviderID
+      `);
+
+    if (providerResult.recordset.length === 0) {
+      return res.status(404).json({ error: 'Provider not found' });
+    }
+
+    const provider = providerResult.recordset[0];
+
+    // ✅ Fetch related reviews
+    const reviewResult = await pool.request()
+      .input('ProviderID', sql.Int, providerID)
+      .query(`
+        SELECT r.Rating, r.Comment, r.CreatedAt
+        FROM Reviews r
+        JOIN Bookings b ON r.BookingID = b.BookingID
+        WHERE b.ProviderID = @ProviderID
+        ORDER BY r.CreatedAt DESC
+      `);
+
+    // ✅ Attach reviews to provider object
+    provider.Reviews = reviewResult.recordset;
+
+    // ✅ Return combined result
+    res.json(provider);
+
+  } catch (err) {
+    console.error('❌ Error fetching provider details:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
