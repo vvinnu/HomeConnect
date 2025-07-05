@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head') %>
+  <title>Add Availability | HomeConnect</title>
+</head>
+<body>
+  <%- include('../partials/navbar', { isLoggedIn: isLoggedIn, role: role }) %>
+
+  <div class="container py-5">
+    <h2 class="text-center text-warning mb-4">➕ Add New Availability</h2>
+
+    <form action="/provider/availability/add" method="POST" class="col-md-6 offset-md-3 border rounded p-4 bg-light shadow-sm">
+      <% if (formErrors.length > 0) { %>
+        <div class="alert alert-danger">
+          <ul class="mb-0">
+            <% formErrors.forEach(error => { %>
+              <li><%= error.msg %></li>
+            <% }) %>
+          </ul>
+        </div>
+      <% } %>
+
+      <div class="mb-3">
+        <label for="SlotStart" class="form-label">Start Time</label>
+        <input type="datetime-local" name="SlotStart" class="form-control" required>
+      </div>
+
+      <div class="mb-3">
+        <label for="SlotEnd" class="form-label">End Time</label>
+        <input type="datetime-local" name="SlotEnd" class="form-control" required>
+      </div>
+
+      <div class="text-end">
+        <button type="submit" class="btn btn-warning">Add Slot</button>
+      </div>
+    </form>
+  </div>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

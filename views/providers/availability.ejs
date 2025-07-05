@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head') %>
+  <title>Manage Availability | HomeConnect</title>
+</head>
+<body>
+  <%- include('../partials/navbar', { isLoggedIn: isLoggedIn, role: role }) %>
+
+  <div class="container py-5">
+    <h2 class="text-center text-warning mb-4">📅 Manage Availability</h2>
+
+    <div class="d-flex justify-content-end mb-3">
+      <a href="/provider/availability/add" class="btn btn-success">➕ Add New Time Slot</a>
+    </div>
+
+    <% if (slots.length === 0) { %>
+      <p class="text-center text-muted">No time slots added yet. Use the button above to add one.</p>
+    <% } else { %>
+      <table class="table table-bordered table-hover align-middle">
+        <thead class="table-dark">
+          <tr>
+            <th>#</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% slots.forEach((slot, index) => { %>
+            <tr>
+              <td><%= index + 1 %></td>
+              <td><%= new Date(slot.SlotStart).toLocaleString() %></td>
+              <td><%= new Date(slot.SlotEnd).toLocaleString() %></td>
+              <td>
+                <% if (slot.IsAvailable) { %>
+                  <span class="badge bg-success">Available</span>
+                <% } else { %>
+                  <span class="badge bg-danger">Booked</span>
+                <% } %>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

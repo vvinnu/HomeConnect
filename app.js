@@ -303,6 +303,105 @@ app.post('/provider/profile/update', async (req, res) => {
   }
 });
 
+//Route to manage availability
+
+app.get('/provider/availability', async (req, res) => {
+  if (!req.session.isLoggedIn || req.session.role !== 'provider') {
+    return res.redirect('/login');
+  }
+
+  const providerID = req.session.providerId;
+
+  try {
+    const pool = await poolPromise;
+    const result = await pool.request()
+      .input('ProviderID', sql.Int, providerID)
+      .query(`
+        SELECT SlotID, SlotStart, SlotEnd, IsAvailable
+        FROM ProviderTimeSlots
+        WHERE ProviderID = @ProviderID
+        ORDER BY SlotStart ASC
+      `);
+
+    res.render('providers/availability', {
+      slots: result.recordset,
+      isLoggedIn: true,
+      username: req.session.username,
+      role: req.session.role
+    });
+
+  } catch (err) {
+    console.error('❌ Error fetching time slots:', err);
+    res.send('Failed to load availability.');
+  }
+});
+
+// Route for adding the availability
+
+app.get('/provider/availability/add', async (req, res) => {
+  if (!req.session.isLoggedIn || req.session.role !== 'provider') {
+    return res.redirect('/login');
+  }
+
+  res.render('providers/addSlot', {
+    isLoggedIn: true,
+    role: req.session.role,
+    username: req.session.username,
+    formErrors: []
+  });
+});
+
+// Post route to add the availability
+
+app.post('/providers/availability/add', [
+  check('SlotStart', 'Start time is required').notEmpty(),
+  check('SlotEnd', 'End time is required').notEmpty()
+], async (req, res) => {
+  if (!req.session.isLoggedIn || req.session.role !== 'provider') {
+    return res.redirect('/login');
+  }
+
+  const errors = validationResult(req);
+  const { SlotStart, SlotEnd } = req.body;
+
+  if (!errors.isEmpty()) {
+    return res.render('providers/addSlot', {
+      isLoggedIn: true,
+      role: req.session.role,
+      username: req.session.username,
+      formErrors: errors.array()
+    });
+  }
+
+  try {
+    const pool = await poolPromise;
+
+    // Get provider ID based on session user
+    const providerResult = await pool.request()
+      .input('UserID', sql.Int, req.session.userId)
+      .query(`SELECT ProviderID FROM Providers WHERE UserID = @UserID`);
+
+    if (providerResult.recordset.length === 0) {
+      return res.send('Provider profile not found.');
+    }
+
+    const providerId = providerResult.recordset[0].ProviderID;
+
+    await pool.request()
+      .input('ProviderID', sql.Int, providerId)
+      .input('SlotStart', sql.DateTime, SlotStart)
+      .input('SlotEnd', sql.DateTime, SlotEnd)
+      .query(`
+        INSERT INTO ProviderTimeSlots (ProviderID, SlotStart, SlotEnd)
+        VALUES (@ProviderID, @SlotStart, @SlotEnd)
+      `);
+
+    res.redirect('/providers/availability');
+  } catch (err) {
+    console.error('❌ Error adding time slot:', err);
+    res.send('Server error');
+  }
+});
 
 
 // Customer Registration Page
