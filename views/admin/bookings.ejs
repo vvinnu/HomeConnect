@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head') %>
+  <title>Bookings | Admin Panel</title>
+</head>
+<body>
+  <div class="container py-5">
+    <h2 class="text-center mb-4">📘 All Bookings</h2>
+
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped table-hover shadow-sm">
+        <thead class="table-warning text-center">
+          <tr>
+            <th>#</th>
+            <th>Customer</th>
+            <th>Provider</th>
+            <th>Service Type</th>
+            <th>Service Date</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (bookings.length === 0) { %>
+            <tr><td colspan="6" class="text-center">No bookings found</td></tr>
+          <% } else { %>
+            <% bookings.forEach((b, index) => { %>
+              <tr>
+                <td><%= index + 1 %></td>
+                <td><%= b.CustomerName %></td>
+                <td><%= b.ProviderName %></td>
+                <td><%= b.ServiceType %></td>
+                <td><%= new Date(b.ServiceDate).toLocaleString() %></td>
+                <td>
+                  <span class="badge bg-<%= b.Status === 'Confirmed' ? 'success' : b.Status === 'Pending' ? 'warning' : b.Status === 'Cancelled' ? 'danger' : 'secondary' %>">
+                    <%= b.Status %>
+                  </span>
+                </td>
+              </tr>
+            <% }) %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="text-center mt-4">
+      <a href="/admin/dashboard" class="btn btn-secondary">⬅ Back to Dashboard</a>
+    </div>
+  </div>
+</body>
+</html>

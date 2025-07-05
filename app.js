@@ -1076,6 +1076,59 @@ app.get('/admin/providers', async (req, res) => {
   }
 });
 
+// Admin: View all bookings
+app.get('/admin/bookings', async (req, res) => {
+  try {
+    const pool = await poolPromise;
+    const result = await pool.request().query(`
+      SELECT 
+        b.BookingID, b.ServiceDate, b.Status, 
+        cu.FullName AS CustomerName,
+        pr.FullName AS ProviderName,
+        p.ServiceType
+      FROM Bookings b
+      JOIN Users cu ON b.UserID = cu.UserID
+      JOIN Providers p ON b.ProviderID = p.ProviderID
+      JOIN Users pr ON p.UserID = pr.UserID
+      ORDER BY b.ServiceDate DESC
+    `);
+
+    res.render('admin/bookings', {
+      bookings: result.recordset
+    });
+  } catch (err) {
+    console.error('Error fetching bookings:', err);
+    res.status(500).send('Server Error');
+  }
+});
+
+// Admin: View all reviews
+app.get('/admin/reviews', async (req, res) => {
+  try {
+    const pool = await poolPromise;
+    const result = await pool.request().query(`
+      SELECT 
+        r.ReviewID, r.Rating, r.Comment, r.CreatedAt,
+        cu.FullName AS CustomerName,
+        pr.FullName AS ProviderName,
+        p.ServiceType
+      FROM Reviews r
+      JOIN Bookings b ON r.BookingID = b.BookingID
+      JOIN Users cu ON b.UserID = cu.UserID
+      JOIN Providers p ON b.ProviderID = p.ProviderID
+      JOIN Users pr ON p.UserID = pr.UserID
+      ORDER BY r.CreatedAt DESC
+    `);
+
+    res.render('admin/reviews', {
+      reviews: result.recordset
+    });
+  } catch (err) {
+    console.error('Error fetching reviews:', err);
+    res.status(500).send('Server Error');
+  }
+});
+
 
 // Start Server
 const port = process.env.PORT || 5000;

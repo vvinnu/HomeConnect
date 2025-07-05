@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head') %>
+  <title>Reviews | Admin Panel</title>
+</head>
+<body>
+  <div class="container py-5">
+    <h2 class="text-center mb-4">🌟 Customer Reviews</h2>
+
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped table-hover shadow-sm">
+        <thead class="table-warning text-center">
+          <tr>
+            <th>#</th>
+            <th>Customer</th>
+            <th>Provider</th>
+            <th>Service</th>
+            <th>Rating</th>
+            <th>Comment</th>
+            <th>Reviewed On</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (reviews.length === 0) { %>
+            <tr><td colspan="7" class="text-center">No reviews available</td></tr>
+          <% } else { %>
+            <% reviews.forEach((r, index) => { %>
+              <tr>
+                <td><%= index + 1 %></td>
+                <td><%= r.CustomerName %></td>
+                <td><%= r.ProviderName %></td>
+                <td><%= r.ServiceType %></td>
+                <td>
+                  <span class="badge bg-info"><%= r.Rating %> ⭐</span>
+                </td>
+                <td><%= r.Comment %></td>
+                <td><%= new Date(r.CreatedAt).toLocaleString() %></td>
+              </tr>
+            <% }) %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="text-center mt-4">
+      <a href="/admin/dashboard" class="btn btn-secondary">⬅ Back to Dashboard</a>
+    </div>
+  </div>
+</body>
+</html>
