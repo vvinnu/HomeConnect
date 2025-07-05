@@ -46,17 +46,33 @@ app.get('/register', (req, res) => {
   });
 });
 
-// Login Page
+// Login Page for all users
 app.get('/login', (req, res) => {
-  res.render('login', {
-    formErrors: [],
-    isLoggedIn: req.session.isLoggedIn || false,
-    role: req.session.role || null
+  res.render('login/loginChoice', {
+    isLoggedIn: req.session.isLoggedIn || false
   });
 });
 
-// Login POST
-app.post('/login', [
+// Login page for cutsomers
+app.get('/login/customer', (req, res) => {
+  res.render('login/loginCustomer', {
+    formErrors: [],
+    isLoggedIn: req.session.isLoggedIn || false
+  });
+});
+
+
+// Login page for providers
+app.get('/login/provider', (req, res) => {
+  res.render('login/loginProvider', {
+    formErrors: [],
+    isLoggedIn: req.session.isLoggedIn || false
+  });
+});
+
+
+// POST: Customer Login
+app.post('/login/customer', [
   check('username', 'Username is required').notEmpty(),
   check('password', 'Password is required').notEmpty()
 ], async (req, res) => {
@@ -67,7 +83,7 @@ app.post('/login', [
   password = password?.trim();
 
   if (!errors.isEmpty()) {
-    return res.render('login', {
+    return res.render('login/loginCustomer', {
       formErrors: errors.array(),
       isLoggedIn: false
     });
@@ -81,15 +97,15 @@ app.post('/login', [
 
     const user = result.recordset[0];
 
-    if (!user) {
-      return res.render('login', {
-        formErrors: [{ msg: 'User not found' }],
+    if (!user || user.Role !== 'customer') {
+      return res.render('login/loginCustomer', {
+        formErrors: [{ msg: 'Customer not found or invalid role' }],
         isLoggedIn: false
       });
     }
 
     if (user.Password !== password) {
-      return res.render('login', {
+      return res.render('login/loginCustomer', {
         formErrors: [{ msg: 'Incorrect password' }],
         isLoggedIn: false
       });
@@ -99,17 +115,72 @@ app.post('/login', [
     req.session.username = user.FullName;
     req.session.role = user.Role;
     req.session.userId = user.UserID;
-    return res.redirect('/dashboard');
 
+    return res.redirect('/dashboard'); // Or to a customer-specific dashboard if needed
   } catch (err) {
     console.error(err);
-    res.render('login', {
+    res.render('login/loginCustomer', {
       formErrors: [{ msg: 'Server error' }],
-      isLoggedIn: false,
-      role: null
+      isLoggedIn: false
     });
   }
 });
+
+// POST: Provider Login
+app.post('/login/provider', [
+  check('username', 'Username is required').notEmpty(),
+  check('password', 'Password is required').notEmpty()
+], async (req, res) => {
+  const errors = validationResult(req);
+  let { username, password } = req.body;
+
+  username = username?.trim();
+  password = password?.trim();
+
+  if (!errors.isEmpty()) {
+    return res.render('login/loginProvider', {
+      formErrors: errors.array(),
+      isLoggedIn: false
+    });
+  }
+
+  try {
+    const pool = await poolPromise;
+    const result = await pool.request()
+      .input('username', sql.NVarChar, username)
+      .query('SELECT * FROM Users WHERE LOWER(Username) = LOWER(@username)');
+
+    const user = result.recordset[0];
+
+    if (!user || user.Role !== 'provider') {
+      return res.render('login/loginProvider', {
+        formErrors: [{ msg: 'Service provider not found or invalid role' }],
+        isLoggedIn: false
+      });
+    }
+
+    if (user.Password !== password) {
+      return res.render('login/loginProvider', {
+        formErrors: [{ msg: 'Incorrect password' }],
+        isLoggedIn: false
+      });
+    }
+
+    req.session.isLoggedIn = true;
+    req.session.username = user.FullName;
+    req.session.role = user.Role;
+    req.session.userId = user.UserID;
+
+    return res.redirect('/provider/dashboard'); // Redirect to provider dashboard
+  } catch (err) {
+    console.error(err);
+    res.render('login/loginProvider', {
+      formErrors: [{ msg: 'Server error' }],
+      isLoggedIn: false
+    });
+  }
+});
+
 
 // Customer Registration Page
 app.get('/register/customer', (req, res) => {

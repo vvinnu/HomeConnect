@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head') %>
+  <title>Provider Login | HomeConnect</title>
+</head>
+<body>
+  <%- include('../partials/navbar', { isLoggedIn: false }) %>
+
+  <div class="container py-5">
+    <div class="col-md-6 offset-md-3">
+      <div class="card border-dark shadow">
+        <div class="card-body p-4">
+          <h3 class="text-center text-dark fw-bold mb-4">Service Provider Login</h3>
+
+          <% if (formErrors && formErrors.length > 0) { %>
+            <div class="alert alert-danger">
+              <ul class="mb-0">
+                <% formErrors.forEach(error => { %>
+                  <li><%= error.msg %></li>
+                <% }) %>
+              </ul>
+            </div>
+          <% } %>
+
+          <form action="/login/provider" method="POST">
+            <div class="mb-3">
+              <label class="form-label fw-bold">Username</label>
+              <input type="text" name="username" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">Password</label>
+              <input type="password" name="password" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-dark w-100 fw-bold">Login</button>
+          </form>
+
+          <div class="text-center mt-3">
+            <a href="/login" class="text-muted text-decoration-none">← Back to login options</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

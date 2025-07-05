@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head') %>
+  <title>Login | HomeConnect</title>
+</head>
+<body>
+  <%- include('../partials/navbar', { isLoggedIn: false }) %>
+
+  <div class="container py-5">
+    <div class="col-md-8 offset-md-2">
+      <div class="card border-warning shadow-lg">
+        <div class="card-body p-5 text-center">
+          <h3 class="text-warning fw-bold mb-4">Welcome to HomeConnect</h3>
+          <p class="mb-4 text-muted">Please select your login type</p>
+
+          <div class="d-grid gap-3 col-6 mx-auto">
+            <a href="/login/customer" class="btn btn-outline-warning btn-lg fw-bold">Login as Customer</a>
+            <a href="/login/provider" class="btn btn-outline-dark btn-lg fw-bold">Login as Service Provider</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>
