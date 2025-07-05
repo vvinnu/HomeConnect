@@ -405,7 +405,7 @@ app.post('/providers/availability/add', [
 
 //Get route for provider bookings
 
-app.get('/provider/bookings', async (req, res) => {
+app.get('/providers/bookings', async (req, res) => {
   if (!req.session.isLoggedIn || req.session.role !== 'provider') {
     return res.redirect('/login');
   }
@@ -442,6 +442,51 @@ app.get('/provider/bookings', async (req, res) => {
     });
   } catch (err) {
     console.error('Error fetching provider bookings:', err);
+    res.send('Server error.');
+  }
+});
+
+// Get route for provider view of reviews
+
+app.get('/providers/reviews', async (req, res) => {
+  if (!req.session.isLoggedIn || req.session.role !== 'provider') {
+    return res.redirect('/login');
+  }
+
+  try {
+    const pool = await poolPromise;
+
+    // Find the ProviderID from the logged-in provider’s user ID
+    const providerResult = await pool.request()
+      .input('UserID', sql.Int, req.session.userId)
+      .query(`SELECT ProviderID FROM Providers WHERE UserID = @UserID`);
+
+    if (providerResult.recordset.length === 0) {
+      return res.send('Provider not found.');
+    }
+
+    const providerId = providerResult.recordset[0].ProviderID;
+
+    // Fetch reviews for bookings linked to this provider
+    const reviewsResult = await pool.request()
+      .input('ProviderID', sql.Int, providerId)
+      .query(`
+        SELECT r.Rating, r.Comment, r.CreatedAt, u.FullName AS CustomerName
+        FROM Reviews r
+        JOIN Bookings b ON r.BookingID = b.BookingID
+        JOIN Users u ON b.UserID = u.UserID
+        WHERE b.ProviderID = @ProviderID
+        ORDER BY r.CreatedAt DESC
+      `);
+
+    res.render('providers/reviews', {
+      isLoggedIn: true,
+      role: req.session.role,
+      username: req.session.username,
+      reviews: reviewsResult.recordset
+    });
+  } catch (err) {
+    console.error('Error fetching reviews:', err);
     res.send('Server error.');
   }
 });
