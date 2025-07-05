@@ -218,7 +218,7 @@ app.get('/providers/dashboard', async (req, res) => {
 //// Provider Routes
 
 // Provider Profile Page
-app.get('/provider/profile', async (req, res) => {
+app.get('/providers/profile', async (req, res) => {
   if (!req.session.isLoggedIn || req.session.role !== 'provider') {
     return res.redirect('/login');
   }
@@ -254,7 +254,7 @@ app.get('/provider/profile', async (req, res) => {
 });
 
 
-app.post('/provider/profile/update', async (req, res) => {
+app.post('/providers/profile/update', async (req, res) => {
   if (!req.session.isLoggedIn || req.session.role !== 'provider') {
     return res.redirect('/login');
   }
@@ -295,7 +295,7 @@ app.post('/provider/profile/update', async (req, res) => {
         WHERE UserID = @UserID
       `);
 
-    res.redirect('/provider/profile');
+    res.redirect('/providers/profile');
 
   } catch (err) {
     console.error('❌ Error updating provider profile:', err);
@@ -305,7 +305,7 @@ app.post('/provider/profile/update', async (req, res) => {
 
 //Route to manage availability
 
-app.get('/provider/availability', async (req, res) => {
+app.get('/providers/availability', async (req, res) => {
   if (!req.session.isLoggedIn || req.session.role !== 'provider') {
     return res.redirect('/login');
   }
@@ -338,7 +338,7 @@ app.get('/provider/availability', async (req, res) => {
 
 // Route for adding the availability
 
-app.get('/provider/availability/add', async (req, res) => {
+app.get('/providers/availability/add', async (req, res) => {
   if (!req.session.isLoggedIn || req.session.role !== 'provider') {
     return res.redirect('/login');
   }
@@ -400,6 +400,49 @@ app.post('/providers/availability/add', [
   } catch (err) {
     console.error('❌ Error adding time slot:', err);
     res.send('Server error');
+  }
+});
+
+//Get route for provider bookings
+
+app.get('/provider/bookings', async (req, res) => {
+  if (!req.session.isLoggedIn || req.session.role !== 'provider') {
+    return res.redirect('/login');
+  }
+
+  try {
+    const pool = await poolPromise;
+
+    // Get ProviderID from session user
+    const providerResult = await pool.request()
+      .input('UserID', sql.Int, req.session.userId)
+      .query(`SELECT ProviderID FROM Providers WHERE UserID = @UserID`);
+
+    if (providerResult.recordset.length === 0) {
+      return res.send('Provider not found.');
+    }
+
+    const providerId = providerResult.recordset[0].ProviderID;
+
+    const bookingsResult = await pool.request()
+      .input('ProviderID', sql.Int, providerId)
+      .query(`
+        SELECT b.BookingID, b.ServiceDate, b.Status, u.FullName AS CustomerName, u.Phone, u.Email
+        FROM Bookings b
+        JOIN Users u ON b.UserID = u.UserID
+        WHERE b.ProviderID = @ProviderID
+        ORDER BY b.ServiceDate DESC
+      `);
+
+    res.render('providers/myBookings', {
+      isLoggedIn: true,
+      role: req.session.role,
+      username: req.session.username,
+      bookings: bookingsResult.recordset
+    });
+  } catch (err) {
+    console.error('Error fetching provider bookings:', err);
+    res.send('Server error.');
   }
 });
 

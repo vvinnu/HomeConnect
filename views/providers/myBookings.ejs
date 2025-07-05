@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head') %>
+  <title>My Bookings | HomeConnect</title>
+</head>
+<body>
+  <%- include('../partials/navbar', { isLoggedIn: isLoggedIn, role: role }) %>
+
+  <div class="container py-5">
+    <h3 class="text-center text-warning mb-4">📘 My Bookings</h3>
+
+    <% if (bookings.length === 0) { %>
+      <p class="text-center text-muted">No bookings found.</p>
+    <% } else { %>
+      <table class="table table-bordered table-hover align-middle">
+        <thead class="table-warning">
+          <tr>
+            <th>Customer</th>
+            <th>Contact</th>
+            <th>Service Date</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% bookings.forEach(b => { %>
+            <tr>
+              <td><%= b.CustomerName %></td>
+              <td>
+                📞 <%= b.Phone %> <br>
+                ✉️ <%= b.Email %>
+              </td>
+              <td><%= new Date(b.ServiceDate).toLocaleString() %></td>
+              <td>
+                <span class="badge bg-<%= 
+                  b.Status === 'Completed' ? 'success' : 
+                  b.Status === 'Cancelled' ? 'danger' : 
+                  'secondary' 
+                %>"><%= b.Status %></span>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>
