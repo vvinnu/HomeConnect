@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head') %>
+  <title>Book a Service - HomeConnect</title>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+  <%- include('../partials/navbar', { isLoggedIn: isLoggedIn }) %>
+
+  <div class="container py-5">
+    <div class="col-md-10 offset-md-1">
+      <div class="card shadow p-4 border-warning" style="border-width: 2px;">
+        <h3 class="text-center mb-4 text-primary">Book a Service</h3>
+
+        <% if (typeof flashMessage !== 'undefined' && flashMessage) { %>
+          <div class="alert alert-success text-center">
+            <%= flashMessage %>
+          </div>
+        <% } %>
+
+        <% if (formErrors && formErrors.length > 0) { %>
+          <div class="alert alert-danger">
+            <ul>
+              <% formErrors.forEach(function(error) { %>
+                <li><%= error.msg %></li>
+              <% }); %>
+            </ul>
+          </div>
+        <% } %>
+
+        <form id="bookingForm" action="/bookings/create" method="POST">
+          <!-- Step 1: Choose Service & Date -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <label for="serviceType" class="form-label fw-bold">Service Type</label>
+              <select class="form-select" id="serviceType" required>
+                <option value="" selected disabled>Select Service Type</option>
+                <option value="Plumbing">Plumbing</option>
+                <option value="Electrician">Electrician</option>
+                <option value="AC Repair">AC Repair</option>
+                <option value="Painting">Painting</option>
+                <option value="Carpentry">Carpentry</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="serviceDate" class="form-label fw-bold">Preferred Date & Time</label>
+              <input type="datetime-local" class="form-control" id="serviceDate" name="serviceDate" required>
+            </div>
+          </div>
+
+          <!-- Step 2: Available Providers -->
+          <div id="providersSection" class="mb-4 d-none">
+            <h5 class="text-warning">Available Providers</h5>
+            <div id="providersList" class="list-group"></div>
+          </div>
+
+          <!-- Step 3: Hidden Selected Provider -->
+          <input type="hidden" name="providerID" id="providerID" required>
+
+          <!-- Submit Button -->
+          <div class="text-center">
+            <button type="submit" id="submitBooking" class="btn btn-warning px-5 fw-bold" disabled>Confirm Booking</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <%- include('../partials/footer') %>
+
+  <script>
+    // Set min date as tomorrow
+    const dateInput = document.getElementById('serviceDate');
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    dateInput.min = tomorrow.toISOString().slice(0, 16);
+
+    const serviceType = document.getElementById('serviceType');
+    const providersSection = document.getElementById('providersSection');
+    const providersList = document.getElementById('providersList');
+    const submitBtn = document.getElementById('submitBooking');
+    const hiddenProviderInput = document.getElementById('providerID');
+
+    serviceType.addEventListener('change', async () => {
+      const selectedType = serviceType.value;
+      const serviceDate = dateInput.value;
+
+      if (!selectedType || !serviceDate) return;
+
+      try {
+        const response = await axios.get(`/api/providers?serviceType=${selectedType}&datetime=${encodeURIComponent(serviceDate)}`);
+        const providers = response.data;
+
+        providersList.innerHTML = '';
+
+        if (providers.length === 0) {
+          providersList.innerHTML = '<p class="text-danger mt-3">No available providers found.</p>';
+          providersSection.classList.remove('d-none');
+          submitBtn.disabled = true;
+          return;
+        }
+
+        providers.forEach(p => {
+          const item = document.createElement('div');
+          item.className = 'list-group-item d-flex justify-content-between align-items-center';
+
+          item.innerHTML = `
+            <div>
+              <h6 class="mb-1">${p.FullName} - ${p.ServiceType}</h6>
+              <p class="mb-1 small">${p.Description}</p>
+              <small>⭐ ${p.Rating.toFixed(1)} | ${p.Experience} yrs | ${p.Availability}</small>
+            </div>
+            <div>
+              <a href="/providers/${p.ProviderID}" target="_blank" class="btn btn-outline-secondary btn-sm mb-1">More Info</a>
+              <button type="button" class="btn btn-warning btn-sm select-provider" data-id="${p.ProviderID}">Select</button>
+            </div>
+          `;
+          providersList.appendChild(item);
+        });
+
+        providersSection.classList.remove('d-none');
+        submitBtn.disabled = true;
+        hiddenProviderInput.value = '';
+      } catch (error) {
+        providersList.innerHTML = '<p class="text-danger mt-3">Error loading providers.</p>';
+        providersSection.classList.remove('d-none');
+        console.error(error);
+      }
+    });
+
+    // Handle provider selection
+    providersList.addEventListener('click', (e) => {
+      if (e.target.classList.contains('select-provider')) {
+        const selectedID = e.target.getAttribute('data-id');
+        hiddenProviderInput.value = selectedID;
+        submitBtn.disabled = false;
+
+        // Highlight selected
+        document.querySelectorAll('.select-provider').forEach(btn => {
+          btn.classList.remove('btn-success');
+          btn.innerText = 'Select';
+        });
+        e.target.classList.add('btn-success');
+        e.target.innerText = 'Selected';
+      }
+    });
+
+  </script>
+</body>
+</html>
