@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head') %>
+  <title>Provider Dashboard | HomeConnect</title>
+</head>
+<body>
+  <%- include('../partials/navbar', { isLoggedIn: isLoggedIn, role: role }) %>
+
+  <div class="container py-5">
+    <h2 class="text-center text-primary mb-4">Welcome, <%= username %> 👋</h2>
+
+    <% if (providers.length === 0) { %>
+      <p class="text-center text-muted">No service profile found. Please contact admin.</p>
+    <% } else { %>
+      <% providers.forEach(provider => { %>
+        <div class="card mb-4 shadow-sm">
+          <div class="card-header bg-warning text-white">
+            <h5 class="mb-0"><%= provider.ServiceType %> Service</h5>
+          </div>
+          <div class="card-body">
+            <p><strong>Description:</strong> <%= provider.Description %></p>
+            <p><strong>Experience:</strong> <%= provider.Experience %> years</p>
+            <p><strong>Availability:</strong> <%= provider.Availability %></p>
+            <p><strong>Rating:</strong> <%= provider.Rating %> ⭐</p>
+          </div>
+        </div>
+      <% }); %>
+    <% } %>
+  </div>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

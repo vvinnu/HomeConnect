@@ -171,7 +171,7 @@ app.post('/login/provider', [
     req.session.role = user.Role;
     req.session.userId = user.UserID;
 
-    return res.redirect('/provider/dashboard'); // Redirect to provider dashboard
+    return res.redirect('/providers/dashboard'); // Redirect to provider dashboard
   } catch (err) {
     console.error(err);
     res.render('login/loginProvider', {
@@ -180,6 +180,41 @@ app.post('/login/provider', [
     });
   }
 });
+
+// Provider Dashboard Route
+app.get('/providers/dashboard', async (req, res) => {
+  if (!req.session.isLoggedIn || req.session.role !== 'provider') {
+    return res.redirect('/login');
+  }
+
+  try {
+    const pool = await poolPromise;
+
+    // Fetch provider info based on logged-in user's ID
+    const providerResult = await pool.request()
+      .input('UserID', sql.Int, req.session.userId)
+      .query(`
+        SELECT p.ProviderID, p.ServiceType, p.Experience, p.Description, p.Availability, p.Rating, u.FullName
+        FROM Providers p
+        JOIN Users u ON p.UserID = u.UserID
+        WHERE p.UserID = @UserID
+      `);
+
+    const providers = providerResult.recordset;
+
+    res.render('providers/dashboard', {
+      username: req.session.username,
+      providers,
+      isLoggedIn: true,
+      role: req.session.role
+    });
+
+  } catch (err) {
+    console.error('❌ Provider dashboard error:', err);
+    res.status(500).send('Server Error');
+  }
+});
+
 
 
 // Customer Registration Page
