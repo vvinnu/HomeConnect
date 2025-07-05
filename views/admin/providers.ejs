@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head') %>
+  <title>Service Providers | Admin Panel</title>
+</head>
+<body>
+  <div class="container py-5">
+    <h2 class="text-center mb-4">🧑‍🔧 Registered Service Providers</h2>
+
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped table-hover shadow-sm">
+        <thead class="table-warning text-center">
+          <tr>
+            <th>#</th>
+            <th>Full Name</th>
+            <th>Service Type</th>
+            <th>Experience (yrs)</th>
+            <th>Availability</th>
+            <th>Rating</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Certification</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (providers.length === 0) { %>
+            <tr><td colspan="9" class="text-center">No providers found</td></tr>
+          <% } else { %>
+            <% providers.forEach((p, index) => { %>
+              <tr>
+                <td><%= index + 1 %></td>
+                <td><%= p.FullName %></td>
+                <td><%= p.ServiceType %></td>
+                <td><%= p.Experience %></td>
+                <td><%= p.Availability %></td>
+                <td><%= p.Rating.toFixed(1) %> ⭐</td>
+                <td><%= p.Phone || '-' %></td>
+                <td><%= p.Email || '-' %></td>
+                <td>
+                  <% if (p.CertFilePath) { %>
+                    <a href="/<%= p.CertFilePath %>" class="btn btn-sm btn-outline-primary" target="_blank">View</a>
+                  <% } else { %>
+                    <span class="text-muted">None</span>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="text-center mt-4">
+      <a href="/admin/dashboard" class="btn btn-secondary">⬅ Back to Dashboard</a>
+    </div>
+  </div>
+</body>
+</html>

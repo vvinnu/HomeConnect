@@ -994,6 +994,89 @@ app.get('/logout', (req, res) => {
   });
 });
 
+
+//// Admin UI routes
+
+// Admin Login Page
+app.get('/admin', (req, res) => {
+  res.render('admin/login', { error: null });
+});
+
+// Admin Login POST
+app.post('/admin/login', async (req, res) => {
+  const { username, password } = req.body;
+
+  try {
+    const pool = await poolPromise;
+    const result = await pool.request()
+      .input('username', sql.NVarChar, username)
+      .query('SELECT * FROM Users WHERE LOWER(Username) = LOWER(@username) AND Role = \'admin\'');
+
+    const admin = result.recordset[0];
+
+    if (!admin || admin.Password !== password) {
+      return res.render('admin/login', { error: 'Invalid credentials' });
+    }
+
+    req.session.isAdmin = true;
+    req.session.adminName = admin.FullName;
+    res.redirect('/admin/dashboard');
+  } catch (err) {
+    console.error('❌ Admin login failed:', err);
+    res.render('admin/login', { error: 'Server error' });
+  }
+});
+
+// Admin Dashboard Overview
+app.get('/admin/dashboard', (req, res) => {
+  if (!req.session.isAdmin) return res.redirect('/admin');
+  res.render('admin/dashboard', {
+    adminName: req.session.adminName
+  });
+});
+
+// Admin: View all users
+app.get('/admin/users', async (req, res) => {
+  try {
+    const pool = await poolPromise;
+    const result = await pool.request().query(`
+      SELECT UserID, FullName, Username, Role, Phone, Email, Address, CreatedAt
+      FROM Users
+      ORDER BY CreatedAt DESC
+    `);
+
+    res.render('admin/users', {
+      users: result.recordset
+    });
+  } catch (err) {
+    console.error('Error loading users:', err);
+    res.status(500).send('Server Error');
+  }
+});
+
+// Admin: View all providers
+app.get('/admin/providers', async (req, res) => {
+  try {
+    const pool = await poolPromise;
+    const result = await pool.request().query(`
+      SELECT 
+        p.ProviderID, u.FullName, u.Email, u.Phone, p.ServiceType, 
+        p.Experience, p.Availability, p.Rating, p.CertFilePath
+      FROM Providers p
+      JOIN Users u ON p.UserID = u.UserID
+      ORDER BY p.ProviderID
+    `);
+
+    res.render('admin/providers', {
+      providers: result.recordset
+    });
+  } catch (err) {
+    console.error('Error loading providers:', err);
+    res.status(500).send('Server Error');
+  }
+});
+
+
 // Start Server
 const port = process.env.PORT || 5000;
 app.listen(port, () => {

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head') %>
+  <title>Admin Dashboard | HomeConnect</title>
+</head>
+<body>
+  <div class="container py-5">
+    <div class="bg-light rounded p-4 mb-5 text-center shadow-sm border">
+      <h2 class="text-dark fw-bold">Welcome, <%= adminName %> 👋</h2>
+      <p class="text-muted mb-0">Admin Control Panel – Manage Everything from One Place</p>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4 text-center">
+      <div class="col">
+        <div class="card h-100 shadow-sm border-0">
+          <div class="card-body">
+            <div style="font-size: 40px;">👤</div>
+            <h5 class="card-title mt-2">Users</h5>
+            <a href="/admin/users" class="btn btn-warning mt-2">View All</a>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card h-100 shadow-sm border-0">
+          <div class="card-body">
+            <div style="font-size: 40px;">🛠️</div>
+            <h5 class="card-title mt-2">Providers</h5>
+            <a href="/admin/providers" class="btn btn-warning mt-2">Manage</a>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card h-100 shadow-sm border-0">
+          <div class="card-body">
+            <div style="font-size: 40px;">📅</div>
+            <h5 class="card-title mt-2">Bookings</h5>
+            <a href="/admin/bookings" class="btn btn-warning mt-2">Monitor</a>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card h-100 shadow-sm border-0">
+          <div class="card-body">
+            <div style="font-size: 40px;">⭐</div>
+            <h5 class="card-title mt-2">Reviews</h5>
+            <a href="/admin/reviews" class="btn btn-warning mt-2">Inspect</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
