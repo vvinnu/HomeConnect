@@ -338,13 +338,31 @@ app.post('/bookings/cancel/:id', async (req, res) => {
   try {
     const pool = await poolPromise;
 
-    await pool.request()
+    // 1. Find the SlotID based on Booking's ProviderID and ServiceDate
+    const slotResult = await pool.request()
       .input('BookingID', sql.Int, bookingId)
       .query(`
-        UPDATE Bookings
-        SET Status = 'Cancelled'
-        WHERE BookingID = @BookingID
+        SELECT b.ServiceDate, b.ProviderID, ts.SlotID
+        FROM Bookings b
+        JOIN ProviderTimeSlots ts
+          ON b.ProviderID = ts.ProviderID
+          AND b.ServiceDate = ts.SlotStart
+        WHERE b.BookingID = @BookingID
       `);
+
+    const slot = slotResult.recordset[0];
+
+    // 2. Cancel the booking
+    await pool.request()
+      .input('BookingID', sql.Int, bookingId)
+      .query(`UPDATE Bookings SET Status = 'Cancelled' WHERE BookingID = @BookingID`);
+
+    // 3. Mark the slot as available again if it was matched
+    if (slot?.SlotID) {
+      await pool.request()
+        .input('SlotID', sql.Int, slot.SlotID)
+        .query(`UPDATE ProviderTimeSlots SET IsAvailable = 1 WHERE SlotID = @SlotID`);
+    }
 
     res.redirect('/bookings/history');
   } catch (err) {

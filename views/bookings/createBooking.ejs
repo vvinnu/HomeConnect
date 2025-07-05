@@ -109,11 +109,20 @@
       }
 
       slots.forEach(slot => {
-        const rawStart = slot.SlotStart.slice(11, 16); // "HH:MM"
-        const rawEnd = slot.SlotEnd.slice(11, 16);
+            const rawStart = slot.SlotStart.slice(11, 16);
+            const rawEnd = slot.SlotEnd.slice(11, 16);
 
-        const slotStart = formatTime(rawStart);
-        const slotEnd = formatTime(rawEnd);
+            function formatTime(rawTime) {
+              const [hourStr, min] = rawTime.split(':');
+              const hour = parseInt(hourStr, 10);
+              const ampm = hour >= 12 ? 'p.m.' : 'a.m.';
+              const formattedHour = ((hour + 11) % 12 + 1); // Convert to 12-hour format
+              return `${formattedHour}:${min} ${ampm}`;
+            }
+
+            const slotStart = formatTime(rawStart);
+            const slotEnd = formatTime(rawEnd);
+
 
         const item = document.createElement('div');
         item.className = 'list-group-item d-flex justify-content-between align-items-center';
