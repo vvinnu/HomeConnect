@@ -191,8 +191,7 @@ app.get('/dashboard', (req, res) => {
 
 // To create a new booking
 app.post('/bookings/create', [
-  check('providerID', 'Provider is required').notEmpty(),
-  check('serviceDate', 'Service date is required').notEmpty()
+  check('slotID', 'Time slot is required').notEmpty()
 ], async (req, res) => {
   if (!req.session.isLoggedIn || req.session.role !== 'customer') {
     return res.redirect('/login');
@@ -202,54 +201,56 @@ app.post('/bookings/create', [
   if (!errors.isEmpty()) {
     return res.render('bookings/createBooking', {
       providers: [],
-      isLoggedIn: req.session.isLoggedIn,
+      isLoggedIn: true,
       username: req.session.username,
       formErrors: errors.array()
     });
   }
 
-  const { providerID, serviceDate } = req.body;
+  const { slotID } = req.body;
   const userID = req.session.userId;
 
   try {
     const pool = await poolPromise;
 
-    // Check if this provider is already booked by the user at the same time
-    const existingBooking = await pool.request()
-      .input('userID', sql.Int, userID)
-      .input('providerID', sql.Int, providerID)
-      .input('serviceDate', sql.DateTime, new Date(serviceDate))
+    // ✅ Fetch slot details
+    const slotResult = await pool.request()
+      .input('SlotID', sql.Int, slotID)
       .query(`
-        SELECT * FROM Bookings 
-        WHERE UserID = @userID 
-          AND ProviderID = @providerID 
-          AND CAST(ServiceDate AS DATETIME) = CAST(@serviceDate AS DATETIME)
+        SELECT pts.*, p.ProviderID
+        FROM ProviderTimeSlots pts
+        JOIN Providers p ON pts.ProviderID = p.ProviderID
+        WHERE pts.SlotID = @SlotID AND pts.IsAvailable = 1
       `);
 
-    if (existingBooking.recordset.length > 0) {
+    if (slotResult.recordset.length === 0) {
       return res.render('bookings/createBooking', {
         providers: [],
         isLoggedIn: true,
         username: req.session.username,
-        formErrors: [{ msg: 'You already booked this provider at the same time.' }],
-        role: req.session.role || null
+        formErrors: [{ msg: 'Selected time slot is no longer available.' }]
       });
     }
 
-    // Proceed with booking
+    const slot = slotResult.recordset[0];
+
+    // ✅ Insert booking
     await pool.request()
       .input('userID', sql.Int, userID)
-      .input('providerID', sql.Int, providerID)
-      .input('serviceDate', sql.DateTime, new Date(serviceDate))
+      .input('providerID', sql.Int, slot.ProviderID)
+      .input('serviceDate', sql.DateTime, slot.SlotStart)
       .query(`
         INSERT INTO Bookings (UserID, ProviderID, ServiceDate)
         VALUES (@userID, @providerID, @serviceDate)
       `);
 
-    // ✅ Show success message using TempData-style approach (req.session.flashMessage)
+    // ✅ Mark slot as unavailable
+    await pool.request()
+      .input('SlotID', sql.Int, slot.SlotID)
+      .query(`UPDATE ProviderTimeSlots SET IsAvailable = 0 WHERE SlotID = @SlotID`);
+
     req.session.flashMessage = 'Booking successful!';
     return res.redirect('/bookings/create');
-    
 
   } catch (err) {
     console.error('❌ Booking failed:', err);
@@ -353,39 +354,6 @@ app.post('/bookings/cancel/:id', async (req, res) => {
 });
 
 
-// Handle provider section
-
-app.get('/api/providers', async (req, res) => {
-  const { serviceType, datetime } = req.query;
-
-  if (!serviceType || !datetime) {
-    return res.status(400).json({ error: 'Missing service type or datetime' });
-  }
-
-  try {
-    const pool = await poolPromise;
-
-    // Get providers of selected service type who are not already booked at that time
-    const result = await pool.request()
-      .input('ServiceType', sql.NVarChar, serviceType)
-      .input('ServiceDate', sql.DateTime, new Date(datetime))
-      .query(`
-        SELECT p.ProviderID, u.FullName, p.ServiceType, p.Experience, p.Description, p.Availability, p.Rating
-        FROM Providers p
-        JOIN Users u ON p.UserID = u.UserID
-        WHERE p.ServiceType = @ServiceType
-          AND p.ProviderID NOT IN (
-            SELECT ProviderID FROM Bookings WHERE ServiceDate = @ServiceDate
-          )
-      `);
-
-    res.json(result.recordset);
-  } catch (err) {
-    console.error('❌ Error fetching available providers:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
 // To fetch the providers info
 
 app.get('/providers/:id', async (req, res) => {
@@ -409,6 +377,8 @@ app.get('/providers/:id', async (req, res) => {
       return res.status(404).send('Provider not found');
     }
 
+
+
     // Get provider reviews
     const reviewsResult = await pool.request()
       .input('ProviderID', sql.Int, providerId)
@@ -430,6 +400,142 @@ app.get('/providers/:id', async (req, res) => {
   } catch (err) {
     console.error('❌ Error loading provider details:', err);
     res.status(500).send('Server error');
+  }
+});
+
+app.get('/api/providers', async (req, res) => {
+  const { serviceType, datetime } = req.query;
+
+  console.log("🔍 API Call: /api/providers");
+  console.log("ServiceType:", serviceType);
+  console.log("Datetime:", datetime);
+
+  if (!serviceType || !datetime) {
+    return res.status(400).json({ error: 'Missing service type or datetime' });
+  }
+
+  try {
+    const pool = await poolPromise;
+
+    const result = await pool.request()
+      .input('ServiceType', sql.NVarChar, serviceType)
+      .input('ServiceDate', sql.DateTime, new Date(datetime))
+      .query(`
+        SELECT p.ProviderID, u.FullName, p.ServiceType, p.Experience, p.Description, p.Availability, p.Rating
+        FROM Providers p
+        JOIN Users u ON p.UserID = u.UserID
+        WHERE p.ServiceType = @ServiceType
+          AND p.ProviderID NOT IN (
+            SELECT ProviderID FROM Bookings WHERE ServiceDate = @ServiceDate
+          )
+      `);
+
+    console.log("✅ Providers found:", result.recordset.length);
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('❌ Error fetching available providers:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// API route to fetch the available timeslots
+
+app.get('/api/providers/timeslots', async (req, res) => {
+  const { serviceType, serviceDate } = req.query;
+
+  if (!serviceType || !serviceDate) {
+    return res.status(400).json({ error: 'Missing service type or service date' });
+  }
+
+  try {
+    const pool = await poolPromise;
+
+    const result = await pool.request()
+      .input('ServiceType', sql.NVarChar, serviceType)
+      .input('SelectedDate', sql.Date, new Date(serviceDate))
+      .query(`
+        SELECT 
+          p.ProviderID, u.FullName, p.ServiceType, p.Description, p.Rating,
+          ts.SlotID, ts.SlotStart, ts.SlotEnd
+        FROM Providers p
+        JOIN Users u ON p.UserID = u.UserID
+        JOIN ProviderTimeSlots ts ON p.ProviderID = ts.ProviderID
+        WHERE p.ServiceType = @ServiceType
+          AND CAST(ts.SlotStart AS DATE) = CAST(@SelectedDate AS DATE)
+          AND ts.IsAvailable = 1
+        ORDER BY ts.SlotStart ASC
+      `);
+
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('❌ Error fetching provider time slots:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
+    // API Route to fetch available providers by serviceType and serviceDate
+app.get('/api/providers/available', async (req, res) => {
+  const { serviceType, serviceDate } = req.query;
+
+  if (!serviceType || !serviceDate) {
+    return res.status(400).json({ error: 'Missing parameters' });
+  }
+
+  try {
+    const pool = await poolPromise;
+    const result = await pool.request()
+      .input('ServiceType', sql.NVarChar, serviceType)
+      .input('ServiceDate', sql.DateTime, new Date(serviceDate))
+      .query(`
+        SELECT p.ProviderID, u.FullName, p.ServiceType, p.Availability, p.Description, p.Rating
+        FROM Providers p
+        JOIN Users u ON p.UserID = u.UserID
+        WHERE p.ServiceType = @ServiceType
+          AND p.ProviderID NOT IN (
+            SELECT ProviderID FROM Bookings
+            WHERE ServiceDate = @ServiceDate
+              AND Status IN ('Pending', 'Confirmed')
+          )
+      `);
+
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('❌ Error fetching available providers:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Timeslots
+app.get('/api/timeslots', async (req, res) => {
+  const { serviceType, date } = req.query;
+
+  if (!serviceType || !date) {
+    return res.status(400).json({ error: 'Missing serviceType or date' });
+  }
+
+  try {
+    const pool = await poolPromise;
+
+    const result = await pool.request()
+      .input('ServiceType', sql.NVarChar, serviceType)
+      .input('DateOnly', sql.Date, new Date(date))
+      .query(`
+        SELECT pts.SlotID, pts.ProviderID, pts.SlotStart, pts.SlotEnd, 
+               u.FullName, p.ServiceType, p.Description, p.Rating, p.Experience
+        FROM ProviderTimeSlots pts
+        JOIN Providers p ON pts.ProviderID = p.ProviderID
+        JOIN Users u ON p.UserID = u.UserID
+        WHERE p.ServiceType = @ServiceType
+          AND pts.IsAvailable = 1
+          AND CAST(pts.SlotStart AS DATE) = @DateOnly
+        ORDER BY pts.SlotStart ASC
+      `);
+
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('❌ Error fetching timeslots:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

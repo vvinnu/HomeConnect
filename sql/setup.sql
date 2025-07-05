@@ -56,6 +56,15 @@ CREATE TABLE Reviews (
     CreatedAt DATETIME DEFAULT GETDATE()
 );
 
+-- PROVIDER TIME SLOTS table
+CREATE TABLE ProviderTimeSlots (
+    SlotID INT PRIMARY KEY IDENTITY,
+    ProviderID INT FOREIGN KEY REFERENCES Providers(ProviderID),
+    SlotStart DATETIME NOT NULL,
+    SlotEnd DATETIME NOT NULL,
+    IsAvailable BIT DEFAULT 1
+);
+
 -- Insert SAMPLE USERS
 INSERT INTO Users (FullName, Username, Password, Role, Phone, Email, Address) VALUES
 ('Karun Kumar', 'karun', '1234', 'customer', '1234567890', 'karun@example.com', '123 Maple Street, Waterloo'),
@@ -89,3 +98,25 @@ INSERT INTO Reviews (BookingID, Rating, Comment) VALUES
 (5, 5, 'Very friendly and professional.'),
 (2, 3, 'Satisfactory, could be better.'),
 (4, 2, 'Did not show up on time.');
+
+
+
+-- Insert SAMPLE TIME SLOTS for providers (2025-07-21)
+INSERT INTO ProviderTimeSlots (ProviderID, SlotStart, SlotEnd, IsAvailable) VALUES
+-- Vinay (Plumbing)
+(1, '2025-07-21T09:00:00', '2025-07-21T10:00:00', 1),
+(1, '2025-07-21T11:00:00', '2025-07-21T12:00:00', 1),
+
+-- Priya (Electrician)
+(2, '2025-07-21T10:00:00', '2025-07-21T11:00:00', 1),
+(2, '2025-07-21T14:00:00', '2025-07-21T15:00:00', 1),
+
+-- Vinay (AC Repair)
+(3, '2025-07-21T08:00:00', '2025-07-21T09:30:00', 1),
+
+-- Priya (Painting)
+(4, '2025-07-21T16:00:00', '2025-07-21T18:00:00', 1),
+
+-- Vinay (Carpentry)
+(5, '2025-07-21T13:00:00', '2025-07-21T14:00:00', 1);
+

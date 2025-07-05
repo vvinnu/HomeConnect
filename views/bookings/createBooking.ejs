@@ -44,108 +44,123 @@
               </select>
             </div>
             <div class="col-md-6">
-              <label for="serviceDate" class="form-label fw-bold">Preferred Date & Time</label>
-              <input type="datetime-local" class="form-control" id="serviceDate" name="serviceDate" required>
+              <label for="bookingDate" class="form-label fw-bold">Preferred Date</label>
+              <input type="date" class="form-control" id="bookingDate" required>
             </div>
           </div>
 
-          <!-- Step 2: Available Providers -->
-          <div id="providersSection" class="mb-4 d-none">
-            <h5 class="text-warning">Available Providers</h5>
-            <div id="providersList" class="list-group"></div>
+          <!-- Step 2: Available Slots -->
+          <div id="slotsSection" class="mb-4 d-none">
+            <h5 class="text-warning">Available Slots</h5>
+            <div id="slotsList" class="list-group"></div>
           </div>
 
-          <!-- Step 3: Hidden Selected Provider -->
-          <input type="hidden" name="providerID" id="providerID" required>
+          <!-- 🔧 Step 3: Hidden Slot ID only -->
+          <input type="hidden" name="slotID" id="slotID" required>
 
-          <!-- Submit Button -->
+          <!-- Submit -->
           <div class="text-center">
             <button type="submit" id="submitBooking" class="btn btn-warning px-5 fw-bold" disabled>Confirm Booking</button>
           </div>
         </form>
+
       </div>
     </div>
   </div>
 
   <%- include('../partials/footer') %>
 
-  <script>
-    // Set min date as tomorrow
-    const dateInput = document.getElementById('serviceDate');
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    dateInput.min = tomorrow.toISOString().slice(0, 16);
+<script>
+  const serviceType = document.getElementById('serviceType');
+  const bookingDate = document.getElementById('bookingDate');
+  const slotsSection = document.getElementById('slotsSection');
+  const slotsList = document.getElementById('slotsList');
+  const submitBtn = document.getElementById('submitBooking');
+  const hiddenSlotID = document.getElementById('slotID');
 
-    const serviceType = document.getElementById('serviceType');
-    const providersSection = document.getElementById('providersSection');
-    const providersList = document.getElementById('providersList');
-    const submitBtn = document.getElementById('submitBooking');
-    const hiddenProviderInput = document.getElementById('providerID');
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  bookingDate.min = tomorrow.toISOString().split('T')[0];
 
-    serviceType.addEventListener('change', async () => {
-      const selectedType = serviceType.value;
-      const serviceDate = dateInput.value;
+  function formatTime(rawTime) {
+    const [hourStr, min] = rawTime.split(':');
+    const hour = parseInt(hourStr, 10);
+    const ampm = hour >= 12 ? 'p.m.' : 'a.m.';
+    const formattedHour = ((hour + 11) % 12 + 1);
+    return `${formattedHour}:${min} ${ampm}`;
+  }
 
-      if (!selectedType || !serviceDate) return;
+  async function fetchTimeSlots() {
+    const type = serviceType.value;
+    const date = bookingDate.value;
 
-      try {
-        const response = await axios.get(`/api/providers?serviceType=${selectedType}&datetime=${encodeURIComponent(serviceDate)}`);
-        const providers = response.data;
+    if (!type || !date) return;
 
-        providersList.innerHTML = '';
+    try {
+      const res = await axios.get(`/api/timeslots?serviceType=${type}&date=${date}`);
+      const slots = res.data;
 
-        if (providers.length === 0) {
-          providersList.innerHTML = '<p class="text-danger mt-3">No available providers found.</p>';
-          providersSection.classList.remove('d-none');
-          submitBtn.disabled = true;
-          return;
-        }
+      slotsList.innerHTML = '';
 
-        providers.forEach(p => {
-          const item = document.createElement('div');
-          item.className = 'list-group-item d-flex justify-content-between align-items-center';
-
-          item.innerHTML = `
-            <div>
-              <h6 class="mb-1">${p.FullName} - ${p.ServiceType}</h6>
-              <p class="mb-1 small">${p.Description}</p>
-              <small>⭐ ${p.Rating.toFixed(1)} | ${p.Experience} yrs | ${p.Availability}</small>
-            </div>
-            <div>
-              <a href="/providers/${p.ProviderID}" target="_blank" class="btn btn-outline-secondary btn-sm mb-1">More Info</a>
-              <button type="button" class="btn btn-warning btn-sm select-provider" data-id="${p.ProviderID}">Select</button>
-            </div>
-          `;
-          providersList.appendChild(item);
-        });
-
-        providersSection.classList.remove('d-none');
-        submitBtn.disabled = true;
-        hiddenProviderInput.value = '';
-      } catch (error) {
-        providersList.innerHTML = '<p class="text-danger mt-3">Error loading providers.</p>';
-        providersSection.classList.remove('d-none');
-        console.error(error);
+      if (slots.length === 0) {
+        slotsList.innerHTML = '<p class="text-danger mt-3">No slots available for the selected date.</p>';
+        slotsSection.classList.remove('d-none');
+        return;
       }
-    });
 
-    // Handle provider selection
-    providersList.addEventListener('click', (e) => {
-      if (e.target.classList.contains('select-provider')) {
-        const selectedID = e.target.getAttribute('data-id');
-        hiddenProviderInput.value = selectedID;
-        submitBtn.disabled = false;
+      slots.forEach(slot => {
+        const rawStart = slot.SlotStart.slice(11, 16); // "HH:MM"
+        const rawEnd = slot.SlotEnd.slice(11, 16);
 
-        // Highlight selected
-        document.querySelectorAll('.select-provider').forEach(btn => {
-          btn.classList.remove('btn-success');
-          btn.innerText = 'Select';
-        });
-        e.target.classList.add('btn-success');
-        e.target.innerText = 'Selected';
-      }
-    });
+        const slotStart = formatTime(rawStart);
+        const slotEnd = formatTime(rawEnd);
 
-  </script>
+        const item = document.createElement('div');
+        item.className = 'list-group-item d-flex justify-content-between align-items-center';
+
+        item.innerHTML = `
+          <div>
+            <h6 class="mb-1">${slot.FullName} - ${slot.ServiceType}</h6>
+            <p class="mb-1 small">${slot.Description}</p>
+            <small>⭐ ${slot.Rating.toFixed(1)} | ${slot.Experience} yrs | Slot: ${slotStart} - ${slotEnd}</small>
+          </div>
+          <div>
+            <a href="/providers/${slot.ProviderID}" target="_blank" class="btn btn-outline-secondary btn-sm mb-1">More Info</a>
+            <button type="button" class="btn btn-warning btn-sm select-slot"
+              data-slotid="${slot.SlotID}">Select</button>
+          </div>
+        `;
+
+        slotsList.appendChild(item);
+      });
+
+      slotsSection.classList.remove('d-none');
+      submitBtn.disabled = true;
+    } catch (error) {
+      console.error('Error fetching slots:', error);
+      slotsList.innerHTML = '<p class="text-danger mt-3">Failed to load slots.</p>';
+      slotsSection.classList.remove('d-none');
+    }
+  }
+
+  serviceType.addEventListener('change', fetchTimeSlots);
+  bookingDate.addEventListener('change', fetchTimeSlots);
+
+  slotsList.addEventListener('click', (e) => {
+    if (e.target.classList.contains('select-slot')) {
+      const slotID = e.target.getAttribute('data-slotid');
+      hiddenSlotID.value = slotID;
+      submitBtn.disabled = false;
+
+      document.querySelectorAll('.select-slot').forEach(btn => {
+        btn.classList.remove('btn-success');
+        btn.innerText = 'Select';
+      });
+
+      e.target.classList.add('btn-success');
+      e.target.innerText = 'Selected';
+    }
+  });
+</script>
 </body>
 </html>
