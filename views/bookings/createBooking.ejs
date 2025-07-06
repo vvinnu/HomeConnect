@@ -30,6 +30,22 @@
         <% } %>
 
         <form id="bookingForm" action="/bookings/create" method="POST">
+
+          <!-- Step 0: Location Selection -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <label for="locationFilter" class="form-label fw-bold">Preferred Location</label>
+              <select class="form-select" id="locationFilter" required>
+                <option value="" selected disabled>Select Location</option>
+                <option value="Waterloo">Waterloo</option>
+                <option value="Kitchener">Kitchener</option>
+                <option value="Toronto">Toronto</option>
+                <option value="Mississauga">Mississauga</option>
+                <option value="Guelph">Guelph</option>
+              </select>
+            </div>
+          </div>
+
           <!-- Step 1: Choose Service & Date -->
           <div class="row mb-4">
             <div class="col-md-6">
@@ -58,6 +74,13 @@
           <!-- 🔧 Step 3: Hidden Slot ID only -->
           <input type="hidden" name="slotID" id="slotID" required>
 
+          <!-- Address (Initially hidden) -->
+          <div id="addressSection" class="mb-4 d-none">
+            <label for="serviceAddress" class="form-label fw-bold">Service Address</label>
+            <input type="text" class="form-control" id="serviceAddress" name="serviceAddress" placeholder="Enter full address" required>
+          </div>
+
+
           <!-- Submit -->
           <div class="text-center">
             <button type="submit" id="submitBooking" class="btn btn-warning px-5 fw-bold" disabled>Confirm Booking</button>
@@ -77,6 +100,7 @@
   const slotsList = document.getElementById('slotsList');
   const submitBtn = document.getElementById('submitBooking');
   const hiddenSlotID = document.getElementById('slotID');
+  const locationFilter = document.getElementById('locationFilter');
 
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -90,15 +114,16 @@
     return `${formattedHour}:${min} ${ampm}`;
   }
 
-  async function fetchTimeSlots() {
-    const type = serviceType.value;
-    const date = bookingDate.value;
+    async function fetchTimeSlots() {
+      const type = serviceType.value;
+      const date = bookingDate.value;
+      const location = locationFilter.value;
 
-    if (!type || !date) return;
+      if (!type || !date || !location) return;
 
-    try {
-      const res = await axios.get(`/api/timeslots?serviceType=${type}&date=${date}`);
-      const slots = res.data;
+      try {
+        const res = await axios.get(`/api/timeslots?serviceType=${type}&date=${date}&location=${location}`);
+        const slots = res.data;
 
       slotsList.innerHTML = '';
 
@@ -155,12 +180,15 @@
 
   serviceType.addEventListener('change', fetchTimeSlots);
   bookingDate.addEventListener('change', fetchTimeSlots);
+  locationFilter.addEventListener('change', fetchTimeSlots);
+
 
   slotsList.addEventListener('click', (e) => {
     if (e.target.classList.contains('select-slot')) {
       const slotID = e.target.getAttribute('data-slotid');
       hiddenSlotID.value = slotID;
       submitBtn.disabled = false;
+      
 
       document.querySelectorAll('.select-slot').forEach(btn => {
         btn.classList.remove('btn-success');
@@ -169,6 +197,10 @@
 
       e.target.classList.add('btn-success');
       e.target.innerText = 'Selected';
+
+      // Reveal address input section
+        document.getElementById('addressSection').classList.remove('d-none');
+
     }
   });
 

@@ -570,6 +570,26 @@ app.get('/dashboard', (req, res) => {
   });
 });
 
+// Get route for new booking
+
+app.get('/bookings/create', async (req, res) => {
+  if (!req.session.isLoggedIn || req.session.role !== 'customer') {
+    return res.redirect('/login');
+  }
+
+  const flashMessage = req.session.flashMessage || null;
+  delete req.session.flashMessage;
+
+  res.render('bookings/createBooking', {
+    isLoggedIn: req.session.isLoggedIn,
+    username: req.session.username,
+    role: req.session.role,
+    formErrors: [],
+    flashMessage
+  });
+});
+
+
 // To create a new booking
 app.post('/bookings/create', [
   check('slotID', 'Time slot is required').notEmpty()
@@ -630,7 +650,7 @@ app.post('/bookings/create', [
       .input('SlotID', sql.Int, slot.SlotID)
       .query(`UPDATE ProviderTimeSlots SET IsAvailable = 0 WHERE SlotID = @SlotID`);
 
-    req.session.flashMessage = 'Booking successful!';
+    req.session.flashMessage = 'Booking successful!. Please check the status in Booking History';
     return res.redirect('/bookings/create');
 
   } catch (err) {
@@ -645,30 +665,47 @@ app.post('/bookings/create', [
 });
 
 // Show Booking Form
-app.get('/bookings/create', async (req, res) => {
+app.post('/bookings/create', async (req, res) => {
+  const { slotID, serviceAddress } = req.body;
+  const userId = req.session.userId;
+
+  if (!slotID || !serviceAddress || !userId) {
+    return res.status(400).send('Missing required booking information');
+  }
+
   try {
     const pool = await poolPromise;
-    const result = await pool.request().query(`
-      SELECT p.ProviderID, u.FullName, p.ServiceType, p.Availability
-      FROM Providers p
-      JOIN Users u ON p.UserID = u.UserID
-    `);
 
-    const flashMessage = req.session.flashMessage || null;
-    delete req.session.flashMessage;
+    // Get provider ID from the selected slot
+    const slotResult = await pool.request()
+      .input('SlotID', sql.Int, slotID)
+      .query('SELECT ProviderID, SlotStart FROM ProviderTimeSlots WHERE SlotID = @SlotID AND IsAvailable = 1');
 
-    res.render('bookings/createBooking', {
-      providers: result.recordset,
-      isLoggedIn: req.session.isLoggedIn,
-      username: req.session.username,
-      role: req.session.role || null,
-      formErrors: [],
-      flashMessage
-    });
+    const slot = slotResult.recordset[0];
+    if (!slot) return res.status(400).send('Selected time slot is no longer available');
+
+    // Insert booking
+    await pool.request()
+      .input('UserID', sql.Int, userId)
+      .input('ProviderID', sql.Int, slot.ProviderID)
+      .input('ServiceDate', sql.DateTime, slot.SlotStart)
+      .input('ServiceAddress', sql.NVarChar, serviceAddress)
+      .query(`
+        INSERT INTO Bookings (UserID, ProviderID, ServiceDate, ServiceAddress)
+        VALUES (@UserID, @ProviderID, @ServiceDate, @ServiceAddress)
+      `);
+
+    // Mark the slot unavailable
+    await pool.request()
+      .input('SlotID', sql.Int, slotID)
+      .query('UPDATE ProviderTimeSlots SET IsAvailable = 0 WHERE SlotID = @SlotID');
+
+    req.session.flashMessage = 'Booking confirmed successfully!';
+    res.redirect('/bookings/create');
 
   } catch (err) {
-    console.error('❌ Error fetching providers:', err);
-    res.send('Error loading booking form.');
+    console.error('Booking error:', err);
+    res.status(500).send('Server error');
   }
 });
 
@@ -907,34 +944,49 @@ app.get('/api/providers/available', async (req, res) => {
 });
 
 // Timeslots
+// Updated Timeslots API
 app.get('/api/timeslots', async (req, res) => {
-  const { serviceType, date } = req.query;
+  const { serviceType, date, location } = req.query;
 
-  if (!serviceType || !date) {
-    return res.status(400).json({ error: 'Missing serviceType or date' });
+  if (!serviceType || !date || !location) {
+    return res.status(400).json({ error: 'Missing parameters' });
   }
 
   try {
     const pool = await poolPromise;
 
+    // Get LocationID based on location name
+    const locationResult = await pool.request()
+      .input('City', sql.NVarChar, location)
+      .query(`SELECT LocationID FROM Locations WHERE City = @City`);
+
+    if (locationResult.recordset.length === 0) {
+      return res.status(400).json({ error: 'Invalid location' });
+    }
+
+    const locationID = locationResult.recordset[0].LocationID;
+
+    // Fetch filtered timeslots by location
     const result = await pool.request()
       .input('ServiceType', sql.NVarChar, serviceType)
-      .input('DateOnly', sql.Date, new Date(date))
+      .input('SelectedDate', sql.Date, date)
+      .input('LocationID', sql.Int, locationID)
       .query(`
-        SELECT pts.SlotID, pts.ProviderID, pts.SlotStart, pts.SlotEnd, 
-               u.FullName, p.ServiceType, p.Description, p.Rating, p.Experience
-        FROM ProviderTimeSlots pts
-        JOIN Providers p ON pts.ProviderID = p.ProviderID
+        SELECT ts.SlotID, ts.SlotStart, ts.SlotEnd, p.ProviderID, p.ServiceType, p.Experience, 
+               p.Description, p.Rating, u.FullName
+        FROM ProviderTimeSlots ts
+        JOIN Providers p ON ts.ProviderID = p.ProviderID
         JOIN Users u ON p.UserID = u.UserID
-        WHERE p.ServiceType = @ServiceType
-          AND pts.IsAvailable = 1
-          AND CAST(pts.SlotStart AS DATE) = @DateOnly
-        ORDER BY pts.SlotStart ASC
+        WHERE ts.IsAvailable = 1
+          AND p.ServiceType = @ServiceType
+          AND CAST(ts.SlotStart AS DATE) = @SelectedDate
+          AND p.LocationID = @LocationID
+        ORDER BY ts.SlotStart ASC
       `);
 
     res.json(result.recordset);
   } catch (err) {
-    console.error('❌ Error fetching timeslots:', err);
+    console.error('❌ Error fetching time slots:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
