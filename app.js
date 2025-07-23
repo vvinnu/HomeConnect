@@ -194,7 +194,7 @@ app.get('/providers/dashboard', async (req, res) => {
     const providerResult = await pool.request()
       .input('UserID', sql.Int, req.session.userId)
       .query(`
-        SELECT p.ProviderID, p.ServiceType, p.Experience, p.Description, p.Availability, p.Rating, u.FullName
+        SELECT p.ProviderID, p.ServiceType, p.Experience, p.Description, p.Rating, u.FullName
         FROM Providers p
         JOIN Users u ON p.UserID = u.UserID
         WHERE p.UserID = @UserID
@@ -232,7 +232,7 @@ app.get('/providers/profile', async (req, res) => {
       .input('UserID', sql.Int, userId)
       .query(`
         SELECT u.FullName, u.Email, u.Phone, u.Address, p.ProviderID, 
-               p.ServiceType, p.Experience, p.Description, p.Availability
+               p.ServiceType, p.Experience, p.Description
         FROM Users u
         JOIN Providers p ON u.UserID = p.UserID
         WHERE u.UserID = @UserID
@@ -253,6 +253,7 @@ app.get('/providers/profile', async (req, res) => {
   }
 });
 
+// Route to update the profiles of the providers by themselves
 
 app.post('/providers/profile/update', async (req, res) => {
   if (!req.session.isLoggedIn || req.session.role !== 'provider') {
@@ -262,7 +263,7 @@ app.post('/providers/profile/update', async (req, res) => {
   const userId = req.session.userId;
   const {
     FullName, Email, Phone, Address,
-    ServiceType, Experience, Description, Availability
+    ServiceType, Experience, Description
   } = req.body;
 
   try {
@@ -287,11 +288,10 @@ app.post('/providers/profile/update', async (req, res) => {
       .input('ServiceType', sql.NVarChar, ServiceType)
       .input('Experience', sql.Int, Experience)
       .input('Description', sql.NVarChar, Description)
-      .input('Availability', sql.NVarChar, Availability)
       .query(`
         UPDATE Providers
         SET ServiceType = @ServiceType, Experience = @Experience,
-            Description = @Description, Availability = @Availability
+            Description = @Description
         WHERE UserID = @UserID
       `);
 
@@ -303,17 +303,30 @@ app.post('/providers/profile/update', async (req, res) => {
   }
 });
 
-//Route to manage availability
+//Route to manage providers availability
 
 app.get('/providers/availability', async (req, res) => {
   if (!req.session.isLoggedIn || req.session.role !== 'provider') {
     return res.redirect('/login');
   }
 
-  const providerID = req.session.providerId;
+  const userId = req.session.userId;
 
   try {
     const pool = await poolPromise;
+
+    // Get ProviderID from UserID
+    const providerResult = await pool.request()
+      .input('UserID', sql.Int, userId)
+      .query(`SELECT ProviderID FROM Providers WHERE UserID = @UserID`);
+
+    if (providerResult.recordset.length === 0) {
+      return res.send('Provider profile not found.');
+    }
+
+    const providerID = providerResult.recordset[0].ProviderID;
+
+    // Fetch availability slots
     const result = await pool.request()
       .input('ProviderID', sql.Int, providerID)
       .query(`
@@ -925,7 +938,7 @@ app.get('/api/providers', async (req, res) => {
       .input('ServiceType', sql.NVarChar, serviceType)
       .input('ServiceDate', sql.DateTime, new Date(datetime))
       .query(`
-        SELECT p.ProviderID, u.FullName, p.ServiceType, p.Experience, p.Description, p.Availability, p.Rating
+        SELECT p.ProviderID, u.FullName, p.ServiceType, p.Experience, p.Description, p.Rating
         FROM Providers p
         JOIN Users u ON p.UserID = u.UserID
         WHERE p.ServiceType = @ServiceType
@@ -993,7 +1006,7 @@ app.get('/api/providers/available', async (req, res) => {
       .input('ServiceType', sql.NVarChar, serviceType)
       .input('ServiceDate', sql.DateTime, new Date(serviceDate))
       .query(`
-        SELECT p.ProviderID, u.FullName, p.ServiceType, p.Availability, p.Description, p.Rating
+        SELECT p.ProviderID, u.FullName, p.ServiceType, p.Description, p.Rating
         FROM Providers p
         JOIN Users u ON p.UserID = u.UserID
         WHERE p.ServiceType = @ServiceType
@@ -1070,7 +1083,7 @@ app.get('/api/providers/:id', async (req, res) => {
     const providerResult = await pool.request()
       .input('ProviderID', sql.Int, providerID)
       .query(`
-        SELECT p.ProviderID, p.ServiceType, p.Experience, p.Description, p.Availability, p.Rating,
+        SELECT p.ProviderID, p.ServiceType, p.Experience, p.Description, p.Rating,
                u.FullName
         FROM Providers p
         JOIN Users u ON p.UserID = u.UserID
@@ -1181,7 +1194,7 @@ app.get('/admin/providers', async (req, res) => {
     const result = await pool.request().query(`
       SELECT 
         p.ProviderID, u.FullName, u.Email, u.Phone, p.ServiceType, 
-        p.Experience, p.Availability, p.Rating, p.CertFilePath
+        p.Experience, p.Rating, p.CertFilePath
       FROM Providers p
       JOIN Users u ON p.UserID = u.UserID
       ORDER BY p.ProviderID
