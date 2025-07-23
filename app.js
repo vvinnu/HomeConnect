@@ -1286,27 +1286,98 @@ app.get('/admin/users', async (req, res) => {
   }
 });
 
-// Admin: View all providers
+// Admin: View all providers with optional status filter
 app.get('/admin/providers', async (req, res) => {
+  const statusFilter = req.query.status;
+
   try {
     const pool = await poolPromise;
-    const result = await pool.request().query(`
+
+    const request = pool.request();
+    let query = `
       SELECT 
-        p.ProviderID, u.FullName, u.Email, u.Phone, p.ServiceType, 
-        p.Experience, p.Rating, p.CertFilePath
+        p.ProviderID,
+        u.UserID,
+        u.FullName,
+        u.Email,
+        u.Phone,
+        p.ServiceType,
+        p.Experience,
+        p.CertFilePath,
+        ISNULL(p.Status, 'Pending') AS Status,
+        ISNULL(AVG(r.Rating), 0) AS Rating
       FROM Providers p
       JOIN Users u ON p.UserID = u.UserID
-      ORDER BY p.ProviderID
-    `);
+      LEFT JOIN Bookings b ON b.ProviderID = p.ProviderID
+      LEFT JOIN Reviews r ON r.BookingID = b.BookingID
+    `;
+
+    if (statusFilter && ['Approved', 'Pending', 'Declined'].includes(statusFilter)) {
+      query += ` WHERE ISNULL(p.Status, 'Pending') = @StatusFilter`;
+      request.input('StatusFilter', sql.NVarChar, statusFilter);
+    }
+
+    query += `
+      GROUP BY 
+        p.ProviderID, u.UserID, u.FullName, u.Email, u.Phone, 
+        p.ServiceType, p.Experience, p.CertFilePath, p.Status
+      ORDER BY p.ProviderID DESC
+    `;
+
+    const result = await request.query(query);
 
     res.render('admin/providers', {
-      providers: result.recordset
+      providers: result.recordset,
+      selectedStatus: statusFilter || 'All'
     });
   } catch (err) {
     console.error('Error loading providers:', err);
     res.status(500).send('Server Error');
   }
 });
+
+// Admin: Approve a provider
+app.post('/admin/providers/approve/:id', async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    const pool = await poolPromise;
+
+    await pool.request()
+      .input('Status', sql.NVarChar, 'Approved')
+      .input('UserID', sql.Int, userId)
+      .query(`
+        UPDATE Providers SET Status = @Status WHERE UserID = @UserID
+      `);
+
+    res.redirect('/admin/providers');
+  } catch (err) {
+    console.error('Error approving provider:', err);
+    res.status(500).send('Server Error');
+  }
+});
+
+// Admin: Decline a provider
+app.post('/admin/providers/decline/:id', async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    const pool = await poolPromise;
+
+    await pool.request()
+      .input('Status', sql.NVarChar, 'Declined')
+      .input('UserID', sql.Int, userId)
+      .query(`
+        UPDATE Providers SET Status = @Status WHERE UserID = @UserID
+      `);
+
+    res.redirect('/admin/providers');
+  } catch (err) {
+    console.error('Error declining provider:', err);
+    res.status(500).send('Server Error');
+  }
+});
+
 
 // Admin: View all bookings
 app.get('/admin/bookings', async (req, res) => {

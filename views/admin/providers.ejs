@@ -8,8 +8,22 @@
   <div class="container py-5">
     <h2 class="text-center mb-4">🧑‍🔧 Registered Service Providers</h2>
 
+    <!-- Filter Dropdown -->
+    <div class="d-flex justify-content-center mb-4">
+      <form method="GET" action="/admin/providers" class="d-flex gap-2">
+        <select name="status" class="form-select" onchange="this.form.submit()">
+          <option value="">All</option>
+          <option value="Pending" <%= selectedStatus === 'Pending' ? 'selected' : '' %>>Pending</option>
+          <option value="Approved" <%= selectedStatus === 'Approved' ? 'selected' : '' %>>Approved</option>
+          <option value="Declined" <%= selectedStatus === 'Declined' ? 'selected' : '' %>>Declined</option>
+        </select>
+        <noscript><button type="submit" class="btn btn-primary">Filter</button></noscript>
+      </form>
+    </div>
+
+    <!-- Providers Table -->
     <div class="table-responsive">
-      <table class="table table-bordered table-striped table-hover shadow-sm">
+      <table class="table table-bordered table-striped table-hover shadow-sm align-middle">
         <thead class="table-warning text-center">
           <tr>
             <th>#</th>
@@ -19,27 +33,52 @@
             <th>Rating</th>
             <th>Phone</th>
             <th>Email</th>
+            <th>Status</th>
             <th>Certification</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
           <% if (providers.length === 0) { %>
-            <tr><td colspan="9" class="text-center">No providers found</td></tr>
+            <tr><td colspan="10" class="text-center">No providers found</td></tr>
           <% } else { %>
             <% providers.forEach((p, index) => { %>
               <tr>
-                <td><%= index + 1 %></td>
+                <td class="text-center"><%= index + 1 %></td>
                 <td><%= p.FullName %></td>
                 <td><%= p.ServiceType %></td>
-                <td><%= p.Experience %></td>
-                <td><%= p.Rating.toFixed(1) %> ⭐</td>
+                <td class="text-center"><%= p.Experience %></td>
+                <td class="text-center"><%= p.Rating.toFixed(1) %> ⭐</td>
                 <td><%= p.Phone || '-' %></td>
                 <td><%= p.Email || '-' %></td>
-                <td>
+
+                <!-- Status Badge -->
+                <td class="text-center">
+                  <span class="badge bg-<%= p.Status === 'Approved' ? 'success' : p.Status === 'Declined' ? 'danger' : 'secondary' %>">
+                    <%= p.Status %>
+                  </span>
+                </td>
+
+                <!-- Certification -->
+                <td class="text-center">
                   <% if (p.CertFilePath) { %>
                     <a href="/<%= p.CertFilePath %>" class="btn btn-sm btn-outline-primary" target="_blank">View</a>
                   <% } else { %>
                     <span class="text-muted">None</span>
+                  <% } %>
+                </td>
+
+                <!-- Action Buttons -->
+                <td class="text-center">
+                  <% if (p.Status === 'Pending') { %>
+                    <form action="/admin/providers/approve/<%= p.UserID %>" method="POST" class="d-inline">
+                      <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                    </form>
+                    <form action="/admin/providers/decline/<%= p.UserID %>" method="POST" class="d-inline ms-1">
+                      <button type="submit" class="btn btn-sm btn-danger">Decline</button>
+                    </form>
+                  <% } else { %>
+                    <span class="text-muted">—</span>
                   <% } %>
                 </td>
               </tr>
