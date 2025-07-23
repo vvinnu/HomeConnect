@@ -446,6 +446,56 @@ app.get('/providers/bookings', async (req, res) => {
   }
 });
 
+// Route to update the bookings
+app.post('/provider/bookings/confirm/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const pool = await poolPromise;
+
+    // Update status to Confirmed
+    await pool.request()
+      .input('id', id)
+      .query('UPDATE Bookings SET Status = \'Confirmed\' WHERE BookingID = @id');
+
+    res.redirect('/providers/myBookings');
+  } catch (err) {
+    console.error('Error confirming booking:', err);
+    res.status(500).send('Server Error');
+  }
+});
+
+// GET: Provider's My Bookings page
+app.get('/providers/myBookings', async (req, res) => {
+  try {
+    const providerUserId = req.session.userId; // or wherever you store provider ID
+    const pool = await poolPromise;
+
+    const result = await pool.request()
+      .input('userId', providerUserId)
+      .query(`
+        SELECT 
+          b.BookingID, b.ServiceDate, b.Status,
+          u.FullName AS CustomerName, u.Phone, u.Email
+        FROM Bookings b
+        JOIN Providers p ON b.ProviderID = p.ProviderID
+        JOIN Users u ON b.UserID = u.UserID
+        WHERE p.UserID = @userId
+        ORDER BY b.ServiceDate DESC
+      `);
+
+    res.render('providers/myBookings', {
+      bookings: result.recordset,
+      isLoggedIn: true,
+      role: 'provider'
+    });
+
+  } catch (err) {
+    console.error('Error loading provider bookings:', err);
+    res.status(500).send('Server Error');
+  }
+});
+
+
 // Get route for provider view of reviews
 
 app.get('/providers/reviews', async (req, res) => {
