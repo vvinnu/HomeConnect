@@ -137,21 +137,50 @@ INSERT INTO Reviews (BookingID, Rating, Comment) VALUES
 -- Insert SAMPLE TIME SLOTS for providers (2025-07-21)
 INSERT INTO ProviderTimeSlots (ProviderID, SlotStart, SlotEnd, IsAvailable) VALUES
 -- Vinay (Plumbing)
-(1, '2025-07-21T09:00:00', '2025-07-21T10:00:00', 1),
-(1, '2025-07-21T11:00:00', '2025-07-21T12:00:00', 1),
+(1, '2025-08-21T09:00:00', '2025-08-21T10:00:00', 1),
+(1, '2025-08-21T11:00:00', '2025-08-21T12:00:00', 1),
 
 -- Priya (Electrician)
-(2, '2025-07-21T10:00:00', '2025-07-21T11:00:00', 1),
-(2, '2025-07-21T14:00:00', '2025-07-21T15:00:00', 1),
+(2, '2025-08-21T10:00:00', '2025-08-21T11:00:00', 1),
+(2, '2025-08-21T14:00:00', '2025-08-21T15:00:00', 1),
 
 -- Vinay (AC Repair)
-(3, '2025-07-21T08:00:00', '2025-07-21T09:30:00', 1),
+(3, '2025-08-21T08:00:00', '2025-08-21T09:30:00', 1),
 
 -- Priya (Painting)
-(4, '2025-07-21T16:00:00', '2025-07-21T18:00:00', 1),
+(4, '2025-08-21T16:00:00', '2025-08-21T18:00:00', 1),
 
 -- Vinay (Carpentry)
-(5, '2025-07-21T13:00:00', '2025-07-21T14:00:00', 1);
+(5, '2025-08-21T13:00:00', '2025-08-21T14:00:00', 1);
 
 
+
+-- Altering table to add Service Address
+
+ALTER TABLE Bookings
+ADD ServiceAddress NVARCHAR(255);
+
+
+CREATE TABLE Locations (
+    LocationID INT PRIMARY KEY IDENTITY(1,1),
+    City NVARCHAR(100) NOT NULL
+);
+
+INSERT INTO Locations (City) VALUES 
+('Waterloo'),
+('Kitchener'),
+('Toronto'),
+('Mississauga'),
+('Guelph');
+
+
+ALTER TABLE Providers
+ADD LocationID INT FOREIGN KEY REFERENCES Locations(LocationID);
+
+
+-- Vinay – assume lives in Waterloo (LocationID = 1)
+UPDATE Providers SET LocationID = 1 WHERE ProviderID IN (1, 3, 5);
+
+-- Priya – assume lives in Kitchener (LocationID = 2)
+UPDATE Providers SET LocationID = 2 WHERE ProviderID IN (2, 4);
 
