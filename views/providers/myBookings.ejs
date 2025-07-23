@@ -33,18 +33,24 @@
               <td><%= new Date(b.ServiceDate).toLocaleString() %></td>
               <td>
                 <% if (b.Status === 'Pending') { %>
-                  <form action="/provider/bookings/confirm/<%= b.BookingID %>" method="POST" class="d-inline">
-                    <button class="btn btn-success btn-sm mb-1">Confirm</button>
+                  <form action="/providers/bookings/confirm/<%= b.BookingID %>" method="POST" class="d-inline">
+                    <button class="btn btn-success btn-sm">Confirm</button>
+                  </form>
+                <% } else if (b.Status === 'Confirmed') { %>
+                  <form action="/providers/bookings/complete/<%= b.BookingID %>" method="POST" class="d-inline">
+                    <button class="btn btn-primary btn-sm">Mark as Completed</button>
                   </form>
                 <% } %>
 
                 <span class="badge bg-<%= 
                   b.Status === 'Completed' ? 'success' : 
                   b.Status === 'Cancelled' ? 'danger' : 
-                  b.Status === 'Confirmed' ? 'info' : 'secondary'
-                %>"><%= b.Status %></span>
-              </td>
-            </tr>
+                  b.Status === 'Pending' ? 'secondary' : 
+                  'info' 
+                %>">
+                  <%= b.Status %>
+                </span>
+              </td>            </tr>
           <% }) %>
         </tbody>
       </table>

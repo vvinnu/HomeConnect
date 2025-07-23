@@ -447,7 +447,7 @@ app.get('/providers/bookings', async (req, res) => {
 });
 
 // Route to update the bookings
-app.post('/provider/bookings/confirm/:id', async (req, res) => {
+app.post('/providers/bookings/confirm/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const pool = await poolPromise;
@@ -756,6 +756,24 @@ app.post('/bookings/create', async (req, res) => {
   } catch (err) {
     console.error('Booking error:', err);
     res.status(500).send('Server error');
+  }
+});
+
+// Provider marks booking as completed
+app.post('/providers/bookings/complete/:id', async (req, res) => {
+  const bookingId = req.params.id;
+
+  try {
+    const pool = await poolPromise;
+    await pool.request()
+      .input('Status', sql.NVarChar, 'Completed')
+      .input('BookingID', sql.Int, bookingId)
+      .query('UPDATE Bookings SET Status = @Status WHERE BookingID = @BookingID');
+
+    res.redirect('/providers/myBookings');
+  } catch (err) {
+    console.error('Error marking booking as completed:', err);
+    res.status(500).send('Server error while updating status');
   }
 });
 
