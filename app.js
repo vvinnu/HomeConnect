@@ -5,7 +5,6 @@ const { check, validationResult } = require('express-validator');
 const bodyParser = require('body-parser');
 const fileUpload = require('express-fileupload');
 const { sql, poolPromise } = require('./db');
-// ... (All imports and setup remain the same)
 
 const app = express();
 
@@ -13,6 +12,7 @@ const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(fileUpload());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/certs', express.static('certs'));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
