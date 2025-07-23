@@ -55,9 +55,13 @@ app.get('/login', (req, res) => {
 
 // Login page for cutsomers
 app.get('/login/customer', (req, res) => {
+  const successMessage = req.session.successMessage;
+  req.session.successMessage = null;
+
   res.render('login/loginCustomer', {
     formErrors: [],
-    isLoggedIn: req.session.isLoggedIn || false
+    isLoggedIn: req.session.isLoggedIn || false,
+    successMessage
   });
 });
 
@@ -162,6 +166,13 @@ app.post('/login/provider', [
     if (user.Password !== password) {
       return res.render('login/loginProvider', {
         formErrors: [{ msg: 'Incorrect password' }],
+        isLoggedIn: false
+      });
+    }
+
+        if (user.IsApproved !== true && user.IsApproved !== 1) {
+      return res.render('login/loginProvider', {
+        formErrors: [{ msg: 'Your account is pending admin approval.' }],
         isLoggedIn: false
       });
     }
@@ -573,6 +584,93 @@ app.get('/register/provider', (req, res) => {
   });
 });
 
+// Handle service provider registration
+
+app.post('/register/provider', [
+  check('FullName').notEmpty(),
+  check('Username').notEmpty(),
+  check('Password').notEmpty(),
+  check('Role').equals('provider'),
+  check('ServiceType').notEmpty(),
+  check('Experience').isInt({ min: 0 })
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.render('registerProvider', {
+      formErrors: errors.array(),
+      isLoggedIn: false
+    });
+  }
+
+  const { FullName, Username, Password, Phone, Address, Role, ServiceType, Experience } = req.body;
+
+  let certFilePath = null;
+  const cert = req.files?.CertFile;
+
+  if (cert) {
+    const uploadPath = path.join(__dirname, 'certs', cert.name);
+    await cert.mv(uploadPath); // move the file
+    certFilePath = `certs/${cert.name}`; // save path for DB
+  }
+
+  try {
+    const pool = await poolPromise;
+
+    // Check if username exists
+    const check = await pool.request()
+      .input('Username', sql.NVarChar, Username)
+      .query('SELECT * FROM Users WHERE Username = @Username');
+
+    if (check.recordset.length > 0) {
+      return res.render('registerProvider', {
+        formErrors: [{ msg: 'Username already exists' }],
+        isLoggedIn: false
+      });
+    }
+
+    // Insert into Users table
+    const userInsert = await pool.request()
+      .input('FullName', sql.NVarChar, FullName)
+      .input('Username', sql.NVarChar, Username)
+      .input('Password', sql.NVarChar, Password)
+      .input('Role', sql.NVarChar, Role)
+      .input('Phone', sql.NVarChar, Phone)
+      .input('Email', sql.NVarChar, null)
+      .input('Address', sql.NVarChar, Address)
+      .query(`
+        INSERT INTO Users (FullName, Username, Password, Role, Phone, Email, Address)
+        OUTPUT INSERTED.UserID
+        VALUES (@FullName, @Username, @Password, @Role, @Phone, @Email, @Address)
+      `);
+
+    const userId = userInsert.recordset[0].UserID;
+
+    // Insert into Providers table
+    await pool.request()
+      .input('UserID', sql.Int, userId)
+      .input('ServiceType', sql.NVarChar, ServiceType)
+      .input('Experience', sql.Int, Experience)
+      .input('CertFilePath', sql.NVarChar, certFilePath)
+      .input('Description', sql.NVarChar, null)
+      .input('Availability', sql.NVarChar, null)
+      .query(`
+        INSERT INTO Providers (UserID, ServiceType, Experience, CertFilePath, Description, Availability)
+        VALUES (@UserID, @ServiceType, @Experience, @CertFilePath, @Description, @Availability)
+      `);
+
+    req.session.successMessage = 'Provider registration successful. Please log in below.';
+    res.redirect('/login');
+
+  } catch (err) {
+    console.error('❌ Provider registration error:', err);
+    res.render('registerProvider', {
+      formErrors: [{ msg: 'Server error. Please try again.' }],
+      isLoggedIn: false
+    });
+  }
+});
+
+
 // Handle Customer Registration
 app.post('/register/customer', [
   check('FullName', 'Full Name is required').notEmpty(),
@@ -613,7 +711,8 @@ app.post('/register/customer', [
         VALUES (@FullName, @Username, @Password, @Role)
       `);
 
-    res.send('✅ Customer registration successful. <a href="/login">Login here</a>.');
+    req.session.successMessage = 'Customer registration successful. Please log in below.';
+    res.redirect('/login/customer');
   } catch (err) {
     console.error(err);
     res.render('registerCustomer', {

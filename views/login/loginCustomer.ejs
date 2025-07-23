@@ -13,6 +13,12 @@
         <div class="card-body p-4">
           <h3 class="text-center text-warning fw-bold mb-4">Customer Login</h3>
 
+          <% if (successMessage) { %>
+            <div class="alert alert-success text-center">
+              <%= successMessage %>
+            </div>
+          <% } %>
+          
           <% if (formErrors && formErrors.length > 0) { %>
             <div class="alert alert-danger">
               <ul class="mb-0">
