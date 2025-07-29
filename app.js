@@ -70,8 +70,10 @@ app.get('/login/customer', (req, res) => {
 app.get('/login/provider', (req, res) => {
   res.render('login/loginProvider', {
     formErrors: [],
-    isLoggedIn: req.session.isLoggedIn || false
+    isLoggedIn: req.session.isLoggedIn || false,
+    successMessage: req.session.successMessage || null
   });
+  req.session.successMessage = null; // clear after showing
 });
 
 
@@ -144,7 +146,8 @@ app.post('/login/provider', [
   if (!errors.isEmpty()) {
     return res.render('login/loginProvider', {
       formErrors: errors.array(),
-      isLoggedIn: false
+      isLoggedIn: false,
+      successMessage: null
     });
   }
 
@@ -159,21 +162,24 @@ app.post('/login/provider', [
     if (!user || user.Role !== 'provider') {
       return res.render('login/loginProvider', {
         formErrors: [{ msg: 'Service provider not found or invalid role' }],
-        isLoggedIn: false
+        isLoggedIn: false,
+        successMessage: null
       });
     }
 
     if (user.Password !== password) {
       return res.render('login/loginProvider', {
         formErrors: [{ msg: 'Incorrect password' }],
-        isLoggedIn: false
+        isLoggedIn: false,
+        successMessage: null
       });
     }
 
         if (user.IsApproved !== true && user.IsApproved !== 1) {
       return res.render('login/loginProvider', {
         formErrors: [{ msg: 'Your account is pending admin approval.' }],
-        isLoggedIn: false
+        isLoggedIn: false,
+        successMessage: null
       });
     }
 
@@ -187,7 +193,8 @@ app.post('/login/provider', [
     console.error(err);
     res.render('login/loginProvider', {
       formErrors: [{ msg: 'Server error' }],
-      isLoggedIn: false
+      isLoggedIn: false,
+      successMessage: null
     });
   }
 });
@@ -638,9 +645,9 @@ app.post('/register/provider', [
       .input('Email', sql.NVarChar, null)
       .input('Address', sql.NVarChar, Address)
       .query(`
-        INSERT INTO Users (FullName, Username, Password, Role, Phone, Email, Address)
+        INSERT INTO Users (FullName, Username, Password, Role, Phone, Email, Address, IsApproved)
         OUTPUT INSERTED.UserID
-        VALUES (@FullName, @Username, @Password, @Role, @Phone, @Email, @Address)
+        VALUES (@FullName, @Username, @Password, @Role, @Phone, @Email, @Address, 0)
       `);
 
     const userId = userInsert.recordset[0].UserID;
@@ -654,12 +661,12 @@ app.post('/register/provider', [
       .input('Description', sql.NVarChar, null)
       .input('Availability', sql.NVarChar, null)
       .query(`
-        INSERT INTO Providers (UserID, ServiceType, Experience, CertFilePath, Description, Availability)
-        VALUES (@UserID, @ServiceType, @Experience, @CertFilePath, @Description, @Availability)
+        INSERT INTO Providers (UserID, ServiceType, Experience, CertFilePath, Description, Availability, Status)
+        VALUES (@UserID, @ServiceType, @Experience, @CertFilePath, @Description, @Availability, 'Pending')
       `);
 
-    req.session.successMessage = 'Provider registration successful. Please log in below.';
-    res.redirect('/login');
+      req.session.successMessage = 'Registration successful! Your account is pending admin approval. You can log in once approved.';
+      res.redirect('/login/provider');
 
   } catch (err) {
     console.error('❌ Provider registration error:', err);
@@ -1347,7 +1354,8 @@ app.post('/admin/providers/approve/:id', async (req, res) => {
       .input('Status', sql.NVarChar, 'Approved')
       .input('UserID', sql.Int, userId)
       .query(`
-        UPDATE Providers SET Status = @Status WHERE UserID = @UserID
+        UPDATE Providers SET Status = @Status WHERE UserID = @UserID;
+        UPDATE Users SET IsApproved = 1 WHERE UserID = @UserID;
       `);
 
     res.redirect('/admin/providers');
@@ -1368,7 +1376,8 @@ app.post('/admin/providers/decline/:id', async (req, res) => {
       .input('Status', sql.NVarChar, 'Declined')
       .input('UserID', sql.Int, userId)
       .query(`
-        UPDATE Providers SET Status = @Status WHERE UserID = @UserID
+        UPDATE Providers SET Status = @Status WHERE UserID = @UserID;
+        UPDATE Users SET IsApproved = 0 WHERE UserID = @UserID;
       `);
 
     res.redirect('/admin/providers');

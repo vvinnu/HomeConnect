@@ -38,6 +38,9 @@
           <div class="text-center mt-3">
             <a href="/login" class="text-muted text-decoration-none">← Back to login options</a>
           </div>
+          <% if (successMessage) { %>
+            <div class="alert alert-success"><%= successMessage %></div>
+          <% } %>
         </div>
       </div>
     </div>
