@@ -11,6 +11,7 @@ const app = express();
 // Middlewares
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(fileUpload());
+app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/certs', express.static('certs'));
 app.set('view engine', 'ejs');
@@ -74,6 +75,48 @@ app.get('/login/provider', (req, res) => {
     successMessage: req.session.successMessage || null
   });
   req.session.successMessage = null; // clear after showing
+});
+
+// ========================================
+// SEND MESSAGE: Customer contact form
+// ========================================
+app.post('/send-message', async (req, res) => {
+  try {
+    const { name, email, message } = req.body;
+
+    const pool = await poolPromise;
+    await pool.request()
+      .input('Name', sql.NVarChar(100), name)
+      .input('Email', sql.NVarChar(100), email)
+      .input('Message', sql.NVarChar(255), message)
+      .query('INSERT INTO Messages (Name, Email, Message) VALUES (@Name, @Email, @Message)');
+
+    res.json({ success: true, msg: 'Thanks for reaching out. We will get in touch with you soon.' });
+  } catch (err) {
+    console.error('Error sending message:', err);
+    res.status(500).json({ success: false, msg: 'Failed to send message. Please try again later' });
+  }
+});
+
+
+// ================================================
+// Route: GET /admin/messages
+// Purpose: Display all contact form messages in admin panel
+// ================================================
+// ========================================
+// ADMIN: Get all contact form messages
+// ========================================
+app.get('/admin/messages', async (req, res) => {
+  try {
+    const pool = await poolPromise;
+    const result = await pool.request()
+      .query('SELECT * FROM Messages ORDER BY CreatedAt DESC');
+
+    res.render('admin/messages', { messages: result.recordset, adminName: req.session.username });
+  } catch (err) {
+    console.error('Error fetching messages:', err);
+    res.status(500).send('Failed to load messages');
+  }
 });
 
 

@@ -139,18 +139,21 @@
     <p>Email: <strong>support@homeconnect.com</strong></p>
     <p>Phone: <strong>+1 (123) 456-7890</strong></p>
 
-    <form class="row g-3 mt-4 justify-content-center">
+    <form id="contactForm" class="row g-3 mt-4 justify-content-center">
       <div class="col-md-4">
-        <input type="text" class="form-control" placeholder="Your Name" required>
+        <input type="text" class="form-control" name="name" placeholder="Your Name" required>
       </div>
       <div class="col-md-4">
-        <input type="email" class="form-control" placeholder="Your Email" required>
+        <input type="email" class="form-control" name="email" placeholder="Your Email" required>
       </div>
       <div class="col-md-8">
-        <textarea class="form-control" rows="3" placeholder="Your Message" required></textarea>
+        <textarea class="form-control" rows="3" name="message" placeholder="Your Message" required></textarea>
       </div>
       <div class="col-md-8">
         <button type="submit" class="btn btn-warning fw-bold">Send Message</button>
+      </div>
+          <div class="col-md-8">
+        <div id="contactAlert" class="alert d-none mt-3" role="alert"></div>
       </div>
     </form>
   </div>
@@ -173,5 +176,38 @@
 
 
   <%- include('partials/footer') %>
-</body>
+<!-- AJAX script -->
+<script>
+document.getElementById('contactForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  const name = this.name.value;
+  const email = this.email.value;
+  const message = this.message.value;
+  const feedback = document.getElementById('contactAlert');
+
+  try {
+    const res = await fetch('/send-message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, message })
+    });
+    
+    const data = await res.json();
+
+    if (data.success) {
+      feedback.classList.remove('d-none');
+      feedback.innerHTML = '<span class="text-success fw-bold">' + data.msg + '</span>';
+      this.reset();
+    } else {
+      feedback.classList.remove('d-none');
+      feedback.innerHTML = '<span class="text-danger fw-bold">' + data.msg + '</span>';
+    }
+  } catch (err) {
+    console.error(err);
+    feedback.classList.remove('d-none');
+    feedback.innerHTML = '<span class="text-danger fw-bold">Failed to send message.</span>';
+  }
+});
+</script></body>
 </html>

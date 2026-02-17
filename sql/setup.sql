@@ -70,6 +70,23 @@ CREATE TABLE ProviderTimeSlots (
     IsAvailable BIT DEFAULT 1
 );
 
+-- ================================================
+-- TABLE: Messages
+-- Purpose: Store contact form messages sent by customers
+-- ================================================
+CREATE TABLE Messages (
+    MessageID INT PRIMARY KEY IDENTITY(1,1),  -- Auto-increment ID
+    Name NVARCHAR(100) NOT NULL,              -- Sender's name
+    Email NVARCHAR(100) NOT NULL,             -- Sender's email
+    Message NVARCHAR(1000) NOT NULL,          -- Message content
+    CreatedAt DATETIME DEFAULT GETDATE()      -- Timestamp of submission
+);
+
+-- OPTIONAL: Insert sample message for testing
+INSERT INTO Messages (Name, Email, Message) VALUES
+('Test User', 'test@example.com', 'Hello, I want to test the messages table.');
+
+
 -- Insert SAMPLE USERS
 INSERT INTO Users (FullName, Username, Password, Role, Phone, Email, Address, IsApproved) VALUES
 ('Karun Kumar', 'karun', '1234', 'customer', '1234567890', 'karun@example.com', '123 Maple Street, Waterloo', NULL),
