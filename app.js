@@ -122,7 +122,7 @@ app.post('/login/customer', [
     req.session.role = user.Role;
     req.session.userId = user.UserID;
 
-    return res.redirect('/dashboard'); // Or to a customer-specific dashboard if needed
+    return res.redirect('/customers/dashboard'); 
   } catch (err) {
     console.error(err);
     res.render('login/loginCustomer', {
@@ -731,9 +731,9 @@ app.post('/register/customer', [
 });
 
 // Dashboard
-app.get('/dashboard', (req, res) => {
+app.get('/customers/dashboard', (req, res) => {
   if (!req.session.isLoggedIn) return res.redirect('/login');
-  res.render('dashboard', {
+  res.render('customers/dashboard', {
     username: req.session.username || 'User',
     role: req.session.role || 'guest'
   });
