@@ -1,11 +1,12 @@
 
 # 🏠 HomeConnect
 
-**HomeConnect** is a web-based platform that connects customers with verified home service providers such as plumbers, electricians, painters, and more. Built using **Node.js, Express, EJS, and SQL Server**, it offers a smooth registration, login, and booking experience.
+**HomeConnect** is a web-based platform that connects customers with verified home service providers such as plumbers, electricians, painters, and more. 
+The platform handles authentication, role-based access, booking workflows, and provider reviews, offering a structured and scalable solution for service marketplace management   .
 
 ---
 
-## 🚀 Features
+## 🚀 Key Features
 
 - Customer & Provider registration with role-based UI
 - Secure login & session handling
@@ -14,6 +15,15 @@
 - Fully responsive design using Bootstrap
 
 ---
+
+## 🧱 Architecture Overview
+
+- HomeConnect follows a layered Express architecture:
+- Route handling via Express
+- Server-side rendering with EJS
+- SQL Server relational database
+- Session-based authentication using express-session
+- Database connectivity using the mssql package
 
 ## 🔧 Tech Stack
 
@@ -25,7 +35,7 @@
 
 ---
 
-## 📂 Folder Structure
+## 📂 Project Structure
 
 ```
 /HomeConnect
@@ -58,14 +68,13 @@
 
 ---
 
-## 👨‍💻 Authors
+## 👨‍💻 Contributor  
 
 - **Vineeth Kanoor**   
-- **Yamini Reddy Alugubelli**
-- **Bhanuchand Yarlagadda**
 
 ---
 
 ## 📝 License
 
-This project is for academic purposes. No commercial use without permission.
+All rights reserved.
+Unauthorized copying, modification, or distribution is prohibited without prior written permission.
