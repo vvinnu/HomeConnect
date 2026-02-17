@@ -14,10 +14,10 @@
 
         <% if (!isLoggedIn) { %>
           <!-- Guest Links -->
-          <li class="nav-item"><a class="nav-link" href="#">About Us</a></li>
-          <li class="nav-item"><a class="nav-link" href="#">Services</a></li>
-          <li class="nav-item"><a class="nav-link" href="#">Team</a></li>
-          <li class="nav-item"><a class="nav-link" href="#">Contact</a></li>
+          <li class="nav-item"><a class="nav-link" href="/home#about">About Us</a></li>
+          <li class="nav-item"><a class="nav-link" href="/home#services">Services</a></li>
+          <li class="nav-item"><a class="nav-link" href="/home#team">Team</a></li>
+          <li class="nav-item"><a class="nav-link" href="/home#contact">Contact</a></li>
           <li class="nav-item"><a class="btn btn-warning ms-3 fw-bold" href="/login">LOGIN</a></li>
 
         <% } else if (role === 'customer') { %>

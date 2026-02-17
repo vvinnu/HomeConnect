@@ -33,7 +33,13 @@ a:hover {
   text-decoration: none;
 }
 
+html {
+  scroll-behavior: smooth;
+}
 
+section {
+  scroll-margin-top: 80px;
+}
 
 /*--------------------------------------------------------------
 # Back to top button
